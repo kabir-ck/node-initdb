@@ -125,6 +125,20 @@ async function getModuleName(name) {
   return name;
 }
 
+async function FileCompression(options) {
+  if (options.compress === undefined) {
+    const { compress } = await inquirer.prompt([
+      {
+        name: "compress",
+        type: "confirm",
+        message: "Do you want to enable file compression for uploads?",
+        default: false
+      }
+    ]);
+    options.compress = compress;
+  }
+}
+
 program
   .version("1.0.0")
   .description("A CLI tool to create a folder structure for Node.js projects")
@@ -136,6 +150,7 @@ program
   .option("-el, --elysia", "SetUp Initializing For elysia js")
   .option("-j, --javascript", "SetUp Initializing For javascript")
   .option("-t, --typescript", "SetUp Initializing For typescript")
+  .option("-c, --compress", "Enable file compression middleware")
 
   .action(async (name, options) => {
 
@@ -169,6 +184,7 @@ program
       await Language(options);
       await DB(options);
       await FrameWork(options);
+      await FileCompression(options);
 
       if (options.express && options.fastify && options.elysia) {
         console.error(
@@ -261,9 +277,9 @@ program
       });
       let files;
       if (options.seque) {
-        files = sfile(moduleName);
+        files = sfile(moduleName, options);
       } else {
-        files = mfile(moduleName);
+        files = mfile(moduleName, options);
       }
       // Create files as specified in files array
       files.forEach((file) => {

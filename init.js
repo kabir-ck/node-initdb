@@ -77,12 +77,18 @@ const validateAnswer = (index, answer) => { // Function to validate user input b
 const askQuestion = (index, options, rl) => { // Recursive function to ask each question to the user
   if (index >= questions.length) { // Check if all questions have been asked
     let rootFilename = options.javascript ? defaultValues[3] : defaultValues[9]
+    const isTs = !options.javascript; // true when TypeScript is selected
     const packageJson = { // Object to store the package.json data
       name: answers[0] || defaultValues[0],
       version: answers[1] || defaultValues[1],
       description: answers[2] || defaultValues[2],
       main: answers[3] || rootFilename,
-      scripts: {
+      scripts: isTs ? {
+        start: `tsx --env-file=.env ${answers[3] || rootFilename}`,
+        dev: `tsx --watch --env-file=.env ${answers[3] || rootFilename}`,
+        build: `tsc --outDir dist`,
+        test: answers[4] || defaultValues[4]
+      } : {
         start: options.bun ? `bun run --watch ${answers[3] || rootFilename}` : `node ${answers[3] || rootFilename} `,
         dev: options.bun ? `bun run --watch ${answers[3] || rootFilename}` : `nodemon ${answers[3] || rootFilename} `,
         test: answers[4] || defaultValues[4]
@@ -90,7 +96,14 @@ const askQuestion = (index, options, rl) => { // Recursive function to ask each 
       repository: answers[5] ? { type: "git", url: answers[5] } : undefined,
       keywords: answers[6] ? answers[6].split(',').map(keyword => keyword.trim()) : [],
       author: answers[7] || defaultValues[7],
-      license: answers[8] || defaultValues[8]
+      license: answers[8] || defaultValues[8],
+      ...(isTs && {
+        devDependencies: {
+          "typescript": "latest",
+          "tsx": "latest",
+          "@types/node": "latest"
+        }
+      })
     };
 
     fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2)); // Write the package.json file
@@ -130,31 +143,32 @@ const askQuestion = (index, options, rl) => { // Recursive function to ask each 
     }
     if (options.seque) {
       folders = Seque.folders; // Folders from Sequelize configuration
-      files = Seque.files(answers[3] || rootFilename, answers[0] || defaultValues[0]); // Files from Sequelize configuration
+      files = Seque.files(answers[3] || rootFilename, answers[0] || defaultValues[0], options); // Files from Sequelize configuration
       cmd = Seque.cmd; // Command to execute from Sequelize configuration
     } else if (options.mongo) {
       folders = Mongo.folders; // Folders from MongoDB configuration
-      files = Mongo.files(answers[3] || rootFilename, answers[0] || defaultValues[0]); // Files from MongoDB configuration
+      files = Mongo.files(answers[3] || rootFilename, answers[0] || defaultValues[0], options); // Files from MongoDB configuration
       cmd = Mongo.cmd; // Command to execute from MongoDB configuration
     } else {
       console.log('Please choose one of the following options: --mongo or --seque');
       process.exit(1); // Exit if no valid option is provided
     }
-    const rootPath = path.join(process.cwd()); // Root path of the project
 
-    if (options.compression) {
-      if (!folders.includes('Middleware')) {
-        folders.push('Middleware');
+    if (options.compress) {
+      cmd += " sharp archiver fluent-ffmpeg";
+      if (!options.elysia && !options.fastify) {
+        cmd += " multer";
+        if (options.typescript) {
+          cmd += " @types/multer";
+        }
+      } else if (options.fastify) {
+        cmd += " @fastify/multipart";
       }
-      try {
-        const compressFileContent = fs.readFileSync(path.join(__dirname, 'compressFile.js'), 'utf8');
-        files.push({ folder: 'Middleware', name: 'compressFile.js', content: compressFileContent });
-        cmd += ' sharp archiver';
-      } catch (err) {
-        console.error('Error reading compressFile.js:', err);
+      if (options.typescript) {
+        cmd += " @types/archiver @types/fluent-ffmpeg";
       }
     }
-
+    const rootPath = path.join(process.cwd()); // Root path of the project
     // Create directories as specified in folders array
     folders.forEach(folder => {
       mkdirp.sync(path.join(rootPath, folder)); // Create directory synchronously
@@ -170,7 +184,11 @@ const askQuestion = (index, options, rl) => { // Recursive function to ask each 
 
     // Execute command to install required packages
     console.log('Installing required packages...');
-    exec(`${options.npm ? "npm install " + cmd : options.yarn ? "yarn add " + cmd : options.pnpm ? "pnpm add " + cmd : "bun add " + cmd}`, (error, stdout, stderr) => {
+    const pmInstall = options.npm ? "npm install" : options.yarn ? "yarn add" : options.pnpm ? "pnpm add" : "bun add";
+    const pmInstallDev = options.npm ? "npm install -D" : options.yarn ? "yarn add -D" : options.pnpm ? "pnpm add -D" : "bun add -d";
+    const devCmd = isTs ? "typescript tsx @types/node" : null;
+
+    exec(`${pmInstall} ${cmd}`, (error, stdout, stderr) => {
       if (error) {
         console.error(`Error installing packages: ${error.message}`);
         process.exit(1);
@@ -180,8 +198,24 @@ const askQuestion = (index, options, rl) => { // Recursive function to ask each 
         process.exit(1);
       }
       console.log(`Packages installed successfully: ${stdout}`);
-      process.exit(0); // Force process exit after installation completes
 
+      if (devCmd) {
+        console.log('Installing TypeScript devDependencies...');
+        exec(`${pmInstallDev} ${devCmd}`, (devError, devStdout, devStderr) => {
+          if (devError) {
+            console.error(`Error installing devDependencies: ${devError.message}`);
+            process.exit(1);
+          }
+          if (devStderr) {
+            console.error(`stderr: ${devStderr}`);
+            process.exit(1);
+          }
+          console.log(`DevDependencies installed successfully: ${devStdout}`);
+          process.exit(0);
+        });
+      } else {
+        process.exit(0); // Force process exit after installation completes
+      }
     }); // Close the readline interface
     return;
   }

@@ -141,7 +141,7 @@ async function askDefaultStructure(options) {
 }
 
 async function Compression(options) {
-  if (options.compression === undefined) {
+  if (options.compress === undefined) {
     const { compress } = await inquirer.prompt([
       {
         name: "compress",
@@ -150,7 +150,7 @@ async function Compression(options) {
         default: false
       }
     ]);
-    options.compression = compress;
+    options.compress = compress;
   }
 }
 
@@ -161,7 +161,7 @@ program
   .option('-m, --mongo', 'SetUp Initializing For MongoDB')
   .option('-s, --seque', 'SetUp Initializing For Sequelize')
   .option('-y, --yes', 'Create default structure')
-  .option('-c, --compression', 'Include file compression middleware')
+  .option('-c, --compress', 'Include file compression middleware')
   .option('-e, --express', 'SetUp Initializing For express js')
   .option('-f, --fastify', 'SetUp Initializing For fastify js')
   .option('-el, --elysia', 'SetUp Initializing For elysia js')

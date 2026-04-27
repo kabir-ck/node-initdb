@@ -1,11 +1,12 @@
 module.exports = {
-    folders: ['config', 'Controllers', 'Routes', 'Models', 'uploads', 'Middleware' , 'Utils'],
-    files:(index,Projectname) =>{return  [
-        {
-            folder: 'Controllers',
-            name: 'health.Controller.ts',
-            content:
-                `
+  folders: ['config', 'Controllers', 'Routes', 'Models', 'uploads', 'Middleware', 'Utils'],
+  files: (index, Projectname, options) => {
+    let filesArray = [
+      {
+        folder: 'Controllers',
+        name: 'health.Controller.ts',
+        content:
+          `
 // Importing HTTP status codes and messages from utilities
 import { Codes, Messages } from '../Utils/httpCodesAndMessages';
 // Importing the response handler utility for managing API responses
@@ -32,11 +33,11 @@ export default {
     }
 };
                 ` },
-        {
-            folder: 'Routes',
-            name: 'health.Route.ts',
-            content:
-                `
+      {
+        folder: 'Routes',
+        name: 'health.Route.ts',
+        content:
+          `
 // Importing the express module to create router instances and handle the routing
 import express from 'express'
 // Creating a router instance from express to define route handlers
@@ -55,7 +56,7 @@ export default router;
         folder: 'Routes',
         name: 'index.Route.ts',
         content:
-            `   
+          `   
 import express from "express";
 const apiV1Router = express.Router();
 
@@ -64,11 +65,11 @@ apiV1Router.use("/Health", RouterHealth); // Mounting Health router at '/Health'
 
 export default apiV1Router; // Exporting the API v1 router for use in other modules
   ` },
-        {
-            folder: 'Models',
-            name: 'example.Model.ts',
-            content:
-                `
+      {
+        folder: 'Models',
+        name: 'example.Model.ts',
+        content:
+          `
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IExample extends Document {
@@ -221,10 +222,10 @@ const ExampleModel: Model<IExample> = mongoose.model<IExample>('ExampleModel', E
 export default ExampleModel;
                 
         ` },
-        { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
-        {
-            folder: 'Utils', name: 'httpCodesAndMessages.ts', content:
-                `
+      { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
+      {
+        folder: 'Utils', name: 'httpCodesAndMessages.ts', content:
+          `
 // HTTP Status Codes
 // This object maps standard HTTP status codes to their numeric values.
 export const Codes: Record<string, number> = {
@@ -337,10 +338,10 @@ const httpCodesAndMessages = { Codes, Messages };
 export default httpCodesAndMessages;
                      
                 `
-        },
-        {
-            folder : 'Utils', name : 'validations.ts', content :
-            `
+      },
+      {
+        folder: 'Utils', name: 'validations.ts', content:
+          `
 // Validation.js
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 international phone number format
@@ -406,10 +407,10 @@ export function hasRequiredFields(
 }
 
             `
-        },
-        {
-            folder : 'Middleware', name : 'jwtToken.ts', content :
-            `'use strict'
+      },
+      {
+        folder: 'Middleware', name: 'jwtToken.ts', content:
+          `'use strict'
 // jwtHelper.ts
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
@@ -506,10 +507,10 @@ class JWTHelper {
 export default JWTHelper;
             
             `
-        },
-        {
-            folder: 'Utils', name: 'responseHandler.ts', content:
-                `
+      },
+      {
+        folder: 'Utils', name: 'responseHandler.ts', content:
+          `
 /**
  * This module provides a utility class for handling HTTP responses in a standardized way.
  * It includes methods for sending success and error responses with customizable status codes and messages.
@@ -576,11 +577,10 @@ class ResponseHandler {
 
 export default ResponseHandler;
 ` },
-        {
-            folder: '', name: index, content:
-                `
+      {
+        folder: '', name: index, content:
+          `
 import express, { NextFunction, Response, Request } from "express";
-import dotenv from 'dotenv'
 import cors from 'cors'
 import bodyParser from "body-parser";
 import connectDB from "./config/dbConfig";
@@ -589,8 +589,6 @@ import createHttpError from "http-errors";
 import apiV1Router from "./Routes/index.Route"; // Importing API v1 router
 
 const app = express();
-
-dotenv.config({ path: '.env.example' });
 
 app.use(cors()); // Using CORS middleware in the app
 app.use(express.json()); // Middleware to parse JSON bodies
@@ -651,14 +649,11 @@ if (process.env.IS_HTTPS == "true") {
 }
 
                 ` },
-        {
-            folder: 'config', name: 'dbConfig.ts',
-            content:
-                `
+      {
+        folder: 'config', name: 'dbConfig.ts',
+        content:
+          `
 import mongoose, { connect, ConnectOptions } from "mongoose";
-import dotenv from 'dotenv'
-
-dotenv.config({ path: '.env.example' });
 
 // This module exports a function that sets up the MongoDB connection using Mongoose.
 export default async () => {
@@ -668,9 +663,7 @@ export default async () => {
     dbName: process.env.DB_NAME, // Name of the database to connect to.
     user: process.env.DB_USER,   // Database user's name.
     pass: process.env.DB_PASS,   // Database user's password.
-    useNewUrlParser: true,       // Use the new URL parser for MongoDB connection strings.
-    useUnifiedTopology: true,    // Use the new engine for MongoDB driver's topology management.
-  } as ConnectOptions)
+   } as ConnectOptions)
   .then(() => {
     console.log('Mongodb connected..') // Log on successful connection.
   })
@@ -702,10 +695,10 @@ export default async () => {
   });
 };
                 ` },
-        {
-            folder: 'Middleware', name: 'fileUpload.ts',
-            content:
-                `
+      {
+        folder: 'Middleware', name: 'fileUpload.ts',
+        content:
+          `
 /**
  * @fileoverview This module sets up and exports a configured Multer instance 
  * for handling file uploads in a Node.js application. It includes:
@@ -771,9 +764,9 @@ const upload = multer({
 export default upload;
 
                 ` },
-                {
-                  folder: '', name: '.env.example', content:
-`PORT=3000
+      {
+        folder: '', name: '.env.example', content:
+          `PORT=3000
 MONGODB_URI=mongodb://localhost:27017/
 DB_NAME=test
 DB_USER=
@@ -781,10 +774,10 @@ DB_PASS=
 IS_HTTPS=false
 KEYPATH=
 CARTPATH=
-JWT_SECRET=` } ,
-                {
-                  folder: '', name: 'tsconfig.json', content:
-                      `
+JWT_SECRET=` },
+      {
+        folder: '', name: 'tsconfig.json', content:
+          `
 {
   "compilerOptions": {
     "module": "commonjs",
@@ -802,19 +795,19 @@ JWT_SECRET=` } ,
   "include": ["*"]
 }
 
-      ` 
-    } ,
-                {
-                  folder: '', name: '.gitignore', content:
-                      `node_modules
+      `
+      },
+      {
+        folder: '', name: '.gitignore', content:
+          `node_modules
 dist
 package-lock.json
 .env.example
-      ` 
-    } ,
+      `
+      },
       {
         folder: '', name: 'README.md', content:
-            `
+          `
 # *${Projectname}*
 
 This project was generated using node-initdb, a CLI tool for initializing database configurations, web framework setups, and project structures in Node.js projects. *This setup requires you to choose one option from each category: a database, a web framework, a language, and a package manager.*
@@ -899,6 +892,168 @@ For more information, visit:
 
 If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.com or open an issue on GitHub.
             ` } // Empty .env file
-    ]},
-    cmd : '@types/bcryptjs @types/config @types/cors body-parser typescript cors dotenv express jsonwebtoken multer @types/express @types/gravatar fs http-errors https @types/jsonwebtoken @types/mongoose @types/multer @types/node concurrently @types/http-errors http-errors @types/debug'
+    ];
+    if (options && options.compress) {
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'compressMiddleware.ts',
+        content: `import multer from 'multer';
+import sharp from 'sharp';
+import archiver from 'archiver';
+import fs from 'fs';
+import path from 'path';
+import ffmpeg from 'fluent-ffmpeg';
+import { Request, Response, NextFunction } from 'express';
+
+const IMAGE_SIZE_THRESHOLD = 5 * 1024 * 1024;   // 5MB
+const VIDEO_SIZE_THRESHOLD = 100 * 1024 * 1024; // 100MB
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tiff'];
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
+
+const storage = multer.diskStorage({
+    destination: (req: Request, file: Express.Multer.File, cb) => {
+        const uploadsDir = path.join(process.cwd(), 'uploads');
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        cb(null, uploadsDir);
+    },
+    filename: (req: Request, file: Express.Multer.File, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+export const upload = multer({ storage: storage });
+
+async function compressImage(filePath: string, ext: string) {
+    const compressedPath = filePath.replace('.' + ext, '-compressed.' + ext);
+    const outputFormat = ext === 'jpg' ? 'jpeg' : ext;
+
+    await (sharp(filePath) as any)
+    // @ts-ignore
+    [outputFormat]({ quality: 80, effort: 6 })
+        .toFile(compressedPath);
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath);
+        console.log(\`Image compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressVideo(filePath: string, options: any = {}) {
+    const { crf = 28, preset = 'fast', resolution = null } = options;
+    const ext = path.extname(filePath);
+    const compressedPath = filePath.replace(ext, '-compressed.mp4');
+
+    await new Promise((resolve, reject) => {
+        let command = ffmpeg(filePath)
+            .videoCodec('libx264')
+            .audioCodec('aac')
+            .outputOptions([
+                '-crf ' + crf,
+                '-preset ' + preset,
+                '-movflags +faststart',
+            ])
+            .format('mp4');
+
+        if (resolution) {
+            command = command.size(resolution);
+        }
+
+        command
+            .on('end', resolve)
+            .on('error', reject)
+            .save(compressedPath);
+    });
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath.replace(ext, '.mp4'));
+        console.log(\`Video compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Video compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressFileZip(filePath: string) {
+    const zipPath = filePath + '.zip';
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    return new Promise<void>((resolve, reject) => {
+        output.on('close', () => {
+            const originalSize = fs.statSync(filePath).size;
+            const compressedSize = fs.statSync(zipPath).size;
+
+            if (compressedSize < originalSize) {
+                fs.unlinkSync(filePath);
+                console.log(\`File compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+            } else {
+                fs.unlinkSync(zipPath);
+                console.log('Compression did not reduce size, keeping original.');
+            }
+            resolve();
+        });
+        archive.on('error', reject);
+        archive.pipe(output);
+        archive.file(filePath, { name: path.basename(filePath) });
+        archive.finalize();
+    });
+}
+
+export const compressFile = async (req: Request | any, res: Response, next: NextFunction) => {
+    try {
+        const files: Express.Multer.File[] = req.files
+            ? Object.values(req.files).flat() as Express.Multer.File[]
+            : req.file
+                ? [req.file]
+                : [];
+
+        if (files.length === 0) return next();
+
+        await Promise.all(
+            files.map(async (file) => {
+                const ext = path.extname(file.path).replace('.', '').toLowerCase();
+                const isVideo = VIDEO_EXTENSIONS.includes(ext);
+                const threshold = isVideo ? VIDEO_SIZE_THRESHOLD : IMAGE_SIZE_THRESHOLD;
+
+                if (file.size <= threshold) return;
+
+                if (IMAGE_EXTENSIONS.includes(ext)) {
+                    await compressImage(file.path, ext);
+                } else if (isVideo) {
+                    await compressVideo(file.path, req.videoCompressOptions || {});
+                } else {
+                    await compressFileZip(file.path);
+                }
+            })
+        );
+
+        next();
+    } catch (err) {
+        console.error('Compression error:', err);
+        const filesToClean: any[] = req.files ? Object.values(req.files).flat() : req.file ? [req.file] : [];
+        for (const file of filesToClean) {
+            if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        }
+        next(err);
+    }
+};
+`
+      });
+    }
+    return filesArray;
+  },
+  cmd: '@types/bcryptjs @types/config @types/cors body-parser cors express jsonwebtoken multer @types/express @types/gravatar http-errors https @types/jsonwebtoken @types/mongoose @types/multer @types/http-errors @types/debug'
 }

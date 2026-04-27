@@ -1,6 +1,6 @@
 module.exports = {
     folders: ['config', 'Controllers' , 'Routes', 'Models', 'uploads', 'Middleware' , 'Utils'],
-    files: (index,Projectname) =>{return [
+    files: (index, Projectname, options) => { let filesArray = [
         {
             folder: 'Controllers',
             name: 'health.Controller.js',
@@ -783,6 +783,158 @@ For more information, visit:
 
 If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.com or open an issue on GitHub.
         ` }
-    ]},
-    cmd : '@elysiajs/cors @elysiajs/jwt @elysiajs/node dotenv elysia elysia-helmet elysia-rate-limit fs https mongoose jsonwebtoken sequelize mysql2'
+    ];
+    if (options && options.compress) {
+        filesArray.push({
+            folder: 'Middleware',
+            name: 'compressMiddleware.js',
+            content: `import sharp from 'sharp';
+import archiver from 'archiver';
+import fs from 'fs';
+import path from 'path';
+import ffmpeg from 'fluent-ffmpeg';
+
+const IMAGE_SIZE_THRESHOLD = 5 * 1024 * 1024;   // 5MB
+const VIDEO_SIZE_THRESHOLD = 100 * 1024 * 1024; // 100MB
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tiff'];
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
+
+async function compressImage(filePath, ext) {
+    const compressedPath = filePath.replace('.' + ext, '-compressed.' + ext);
+    const outputFormat = ext === 'jpg' ? 'jpeg' : ext;
+
+    await sharp(filePath)
+    [outputFormat]({ quality: 80, effort: 6 })
+        .toFile(compressedPath);
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath);
+        console.log(\`Image compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressVideo(filePath, options = {}) {
+    const { crf = 28, preset = 'fast', resolution = null } = options;
+    const ext = path.extname(filePath);
+    const compressedPath = filePath.replace(ext, '-compressed.mp4');
+
+    await new Promise((resolve, reject) => {
+        let command = ffmpeg(filePath)
+            .videoCodec('libx264')
+            .audioCodec('aac')
+            .outputOptions([
+                '-crf ' + crf,
+                '-preset ' + preset,
+                '-movflags +faststart',
+            ])
+            .format('mp4');
+
+        if (resolution) {
+            command = command.size(resolution);
+        }
+
+        command
+            .on('end', resolve)
+            .on('error', reject)
+            .save(compressedPath);
+    });
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath.replace(ext, '.mp4'));
+        console.log(\`Video compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Video compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressFileZip(filePath) {
+    const zipPath = filePath + '.zip';
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    return new Promise((resolve, reject) => {
+        output.on('close', () => {
+            const originalSize = fs.statSync(filePath).size;
+            const compressedSize = fs.statSync(zipPath).size;
+
+            if (compressedSize < originalSize) {
+                fs.unlinkSync(filePath);
+                console.log(\`File compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+            } else {
+                fs.unlinkSync(zipPath);
+                console.log('Compression did not reduce size, keeping original.');
+            }
+            resolve();
+        });
+        archive.on('error', reject);
+        archive.pipe(output);
+        archive.file(filePath, { name: path.basename(filePath) });
+        archive.finalize();
+    });
+}
+
+export const compressFile = async ({ body }) => {
+    const processingFiles = [];
+    try {
+        if (!body || !body.file) return;
+
+        const files = Array.isArray(body.file) ? body.file : [body.file];
+
+        await Promise.all(
+            files.map(async (file) => {
+                if (!file || !file.name) return;
+                const ext = path.extname(file.name).replace('.', '').toLowerCase();
+                const isVideo = VIDEO_EXTENSIONS.includes(ext);
+                const threshold = isVideo ? VIDEO_SIZE_THRESHOLD : IMAGE_SIZE_THRESHOLD;
+
+                if (file.size <= threshold) return;
+
+                const uploadsDir = path.join(process.cwd(), 'uploads');
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
+                }
+                const filePath = path.join(uploadsDir, Date.now() + '-' + file.name);
+                processingFiles.push(filePath);
+                
+                const buffer = Buffer.from(await file.arrayBuffer());
+                fs.writeFileSync(filePath, buffer);
+
+                if (IMAGE_EXTENSIONS.includes(ext)) {
+                    await compressImage(filePath, ext);
+                } else if (isVideo) {
+                    await compressVideo(filePath, body.videoCompressOptions || {});
+                } else {
+                    await compressFileZip(filePath);
+                }
+                
+                // Expose the saved path so the controller can use it
+                file.savedPath = filePath;
+            })
+        );
+    } catch (err) {
+        console.error('Compression error:', err);
+        for (const filePath of processingFiles) {
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+    }
+};
+`
+        });
+    }
+    return filesArray;
+},
+cmd : '@elysiajs/cors @elysiajs/jwt @elysiajs/node dotenv elysia elysia-helmet elysia-rate-limit fs https mongoose jsonwebtoken sequelize mysql2'
 }    

@@ -1,6 +1,6 @@
 module.exports = {
     folders: ['config','Controllers', 'Routes', 'Models', 'uploads', 'Middleware' , 'Utils'],
-    files: (index,Projectname) =>{return [
+    files: (index, Projectname, options) => { let filesArray = [
         {
             folder: 'Controllers',
             name: 'health.Controller.ts',
@@ -679,7 +679,6 @@ export default ResponseHandler;
  * Starts the server on a specified port, using HTTPS if enabled.
  */
 import fastify from 'fastify';
-import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import cors from '@fastify/cors';
@@ -691,9 +690,6 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import https from 'https';
 import { connectDB } from './config/dbConfig';
 import { initModels } from "./config/initModels";
-
-// Load environment variables from .env file
-dotenv.config({ path: '.env.example' });
 
 // Import custom JWT middleware function (ensure this is properly typed)
 import authenticateMiddleware from './Middleware/jwtToken';
@@ -720,7 +716,7 @@ server.register(multipart);
 
 // Register JWT plugin with secret from environment variables
 server.register(fastifyJwt, {
-  secret: process.env.JWT_SECRET as string,
+  secret: process.env.JWT_SECRET || 'your-secret-key',
 });
 
 // Custom decorator for JWT authentication
@@ -943,6 +939,172 @@ For more information, visit:
 
 If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.com or open an issue on GitHub.
         ` }
-    ]},
-    cmd : '@fastify/formbody @fastify/cors @fastify/multipart @fastify/static bcryptjs config cors mongoose multer typescript @types/cors @types/jsonwebtoken @types/multer @types/node concurrently @types/config @types/bcryptjs jsonwebtoken http-errors @types/sequelize dotenv fastify fastify-jwt fs ts-node @fastify/jwt sequelize mysql2'
+    ];
+    if (options && options.compress) {
+        filesArray.push({
+            folder: 'Middleware',
+            name: 'compressMiddleware.ts',
+            content: `import util from 'util';
+import path from 'path';
+import fs from 'fs';
+import { pipeline } from 'stream';
+const pump = util.promisify(pipeline);
+import sharp from 'sharp';
+import archiver from 'archiver';
+import ffmpeg from 'fluent-ffmpeg';
+import { FastifyRequest, FastifyReply } from 'fastify';
+
+const IMAGE_SIZE_THRESHOLD = 5 * 1024 * 1024;   // 5MB
+const VIDEO_SIZE_THRESHOLD = 100 * 1024 * 1024; // 100MB
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tiff'];
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
+
+async function compressImage(filePath: string, ext: string) {
+    const compressedPath = filePath.replace('.' + ext, '-compressed.' + ext);
+    const outputFormat = ext === 'jpg' ? 'jpeg' : ext;
+
+    await (sharp(filePath) as any)
+        // @ts-ignore
+        [outputFormat]({ quality: 80, effort: 6 })
+        .toFile(compressedPath);
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath);
+        console.log(\`Image compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressVideo(filePath: string, options: any = {}) {
+    const { crf = 28, preset = 'fast', resolution = null } = options;
+    const ext = path.extname(filePath);
+    const compressedPath = filePath.replace(ext, '-compressed.mp4');
+
+    await new Promise((resolve, reject) => {
+        let command = ffmpeg(filePath)
+            .videoCodec('libx264')
+            .audioCodec('aac')
+            .outputOptions([
+                '-crf ' + crf,
+                '-preset ' + preset,
+                '-movflags +faststart',
+            ])
+            .format('mp4');
+
+        if (resolution) {
+            command = command.size(resolution);
+        }
+
+        command
+            .on('end', resolve)
+            .on('error', reject)
+            .save(compressedPath);
+    });
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath.replace(ext, '.mp4'));
+        console.log(\`Video compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Video compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressFileZip(filePath: string) {
+    const zipPath = filePath + '.zip';
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    return new Promise<void>((resolve, reject) => {
+        output.on('close', () => {
+            const originalSize = fs.statSync(filePath).size;
+            const compressedSize = fs.statSync(zipPath).size;
+
+            if (compressedSize < originalSize) {
+                fs.unlinkSync(filePath);
+                console.log(\`File compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+            } else {
+                fs.unlinkSync(zipPath);
+                console.log('Compression did not reduce size, keeping original.');
+            }
+            resolve();
+        });
+        archive.on('error', reject);
+        archive.pipe(output);
+        archive.file(filePath, { name: path.basename(filePath) });
+        archive.finalize();
+    });
+}
+
+export async function compressFile(req: any, reply: FastifyReply) {
+    if (!req.isMultipart || !req.isMultipart()) {
+        return;
+    }
+
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    req.body = req.body || {};
+    req.savedFiles = [];
+
+    try {
+        const parts = req.parts();
+        for await (const part of parts) {
+            if (part.type === 'file') {
+                const ext = path.extname(part.filename).replace('.', '').toLowerCase();
+                const filePath = path.join(uploadsDir, Date.now() + '-' + part.filename);
+                
+                await pump(part.file as any, fs.createWriteStream(filePath));
+                
+                const isVideo = VIDEO_EXTENSIONS.includes(ext);
+                const threshold = isVideo ? VIDEO_SIZE_THRESHOLD : IMAGE_SIZE_THRESHOLD;
+                const fileSize = fs.statSync(filePath).size;
+                
+                if (fileSize > threshold) {
+                    if (IMAGE_EXTENSIONS.includes(ext)) {
+                        await compressImage(filePath, ext);
+                    } else if (isVideo) {
+                        await compressVideo(filePath, req.videoCompressOptions || {});
+                    } else {
+                        await compressFileZip(filePath);
+                    }
+                }
+                
+                req.savedFiles.push({
+                    fieldname: part.fieldname,
+                    filename: part.filename,
+                    path: filePath
+                });
+            } else {
+                req.body[part.fieldname] = (part as any).value;
+            }
+        }
+    } catch (err) {
+        console.error('Multipart parsing/compression error:', err);
+        if (req.savedFiles) {
+            for (const file of req.savedFiles) {
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+            }
+        }
+    }
+}
+`
+        });
+    }
+    return filesArray;
+},
+cmd : '@fastify/formbody @fastify/cors @fastify/multipart @fastify/static bcryptjs config cors multer @types/cors @types/jsonwebtoken @types/multer @types/config @types/bcryptjs jsonwebtoken http-errors @types/sequelize fastify fastify-jwt @fastify/jwt sequelize mysql2'
 }

@@ -1,11 +1,12 @@
 module.exports = {
-    folders: ['config','Controllers', 'Routes', 'Models', 'uploads', 'Middleware' , 'Utils'],
-    files:(index,Projectname) =>{return  [
-        {
-            folder: 'Controllers',
-            name: 'health.Controller.ts',
-            content:
-                `
+  folders: ['config', 'Controllers', 'Routes', 'Models', 'uploads', 'Middleware', 'Utils'],
+  files: (index, Projectname, options) => {
+    let filesArray = [
+      {
+        folder: 'Controllers',
+        name: 'health.Controller.ts',
+        content:
+          `
 // Importing HTTP status codes and messages from utilities
 import { Codes, Messages } from '../Utils/httpCodesAndMessages';
 // Importing the response handler utility for managing API responses
@@ -36,11 +37,11 @@ export const HealthController = {
 };
                 
                 ` },
-        {
-            folder: 'Routes',
-            name: 'health.Route.ts',
-            content:
-                `
+      {
+        folder: 'Routes',
+        name: 'health.Route.ts',
+        content:
+          `
 /**
  * This module exports a function that defines routes for health checks.
  * It imports the HealthController and sets up a GET route for the health check endpoint.
@@ -63,11 +64,11 @@ async function healthRoutes(fastify: FastifyInstance) {
 export default healthRoutes;
                                
                 ` },
-                {
-                  folder: 'Routes',
-                  name: 'index.Route.ts',
-                  content:
-                      `
+      {
+        folder: 'Routes',
+        name: 'index.Route.ts',
+        content:
+          `
 import { FastifyInstance } from 'fastify';
 import RoutesHealth from './health.Route';
 
@@ -77,11 +78,11 @@ export default async function registerRoutes(server: FastifyInstance) {
 
 }  
             ` },
-        {
-            folder: 'Models',
-            name: 'example.Model.ts',
-            content:
-                `
+      {
+        folder: 'Models',
+        name: 'example.Model.ts',
+        content:
+          `
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IExample extends Document {
@@ -238,10 +239,10 @@ export default ExampleModel;
 
                 
         ` },
-        { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
-        {
-            folder: 'Utils', name: 'httpCodesAndMessages.ts', content:
-                `
+      { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
+      {
+        folder: 'Utils', name: 'httpCodesAndMessages.ts', content:
+          `
 // HTTP Status Codes
 // This object maps standard HTTP status codes to their numeric values.
 export const Codes: Record<string, number> = {
@@ -353,10 +354,10 @@ const httpCodesAndMessages = { Codes, Messages };
 
 export default httpCodesAndMessages;  
                 `
-        },
-        {
-            folder : 'Utils', name : 'validations.ts', content :
-            `
+      },
+      {
+        folder: 'Utils', name: 'validations.ts', content:
+          `
 // Validation.ts
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 international phone number format
@@ -421,10 +422,10 @@ export function hasRequiredFields(
   );
 }
             `
-        },
-        {
-            folder : 'Middleware', name : 'jwtToken.ts', content :
-            `'use strict'
+      },
+      {
+        folder: 'Middleware', name: 'jwtToken.ts', content:
+          `'use strict'
 // jwtHelper.ts
 import jwt from 'jsonwebtoken';
 import ResponseHandler from '../Utils/responseHandler';
@@ -521,10 +522,10 @@ class JWTHelper {
 export default JWTHelper;
             
             `
-        },
-        {
-            folder: 'Utils', name: 'responseHandler.ts', content:
-                `
+      },
+      {
+        folder: 'Utils', name: 'responseHandler.ts', content:
+          `
 /**
  * This module provides a utility class for handling HTTP responses in a standardized way.
  * It includes methods for sending success and error responses with customizable status codes and messages.
@@ -592,9 +593,9 @@ class ResponseHandler {
 
 export default ResponseHandler;          
 ` },
-        {
-            folder: '', name: index, content:
-                `
+      {
+        folder: '', name: index, content:
+          `
 
 /**
  * Initializes the Fastify server with logging enabled.
@@ -606,7 +607,6 @@ export default ResponseHandler;
 * Starts the server on a specified port, using HTTPS if enabled.
 */
 import fastify from 'fastify';
-import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import cors from '@fastify/cors';
@@ -617,9 +617,6 @@ import fastifyStatic from '@fastify/static';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import https from 'https';
 import registerRoutes from './Routes/index.Route';
-
-// Load environment variables from .env file
-dotenv.config({ path: '.env.example' });
 
 // Import custom JWT middleware function (ensure this is properly typed)
 import authenticateMiddleware from './Middleware/jwtToken';
@@ -644,7 +641,7 @@ server.register(multipart);
 
 // Register JWT plugin with secret from environment variables
 server.register(fastifyJwt, {
-  secret: process.env.JWT_SECRET as string,
+  secret: process.env.JWT_SECRET || 'your-secret-key',
 });
 
 // Custom decorator for JWT authentication
@@ -693,14 +690,11 @@ const startServer = async (): Promise<void> => {
 startServer();            
 
                 ` },
-        {
-            folder: 'config', name: 'dbConfig.ts',
-            content:
-                `
+      {
+        folder: 'config', name: 'dbConfig.ts',
+        content:
+          `
 import mongoose, { connect, ConnectOptions } from "mongoose";
-import dotenv from 'dotenv'
-
-dotenv.config({ path: '.env.example' });
 
 // This module exports a function that sets up the MongoDB connection using Mongoose.
 export default async () => {
@@ -710,8 +704,6 @@ export default async () => {
     dbName: process.env.DB_NAME, // Name of the database to connect to.
     user: process.env.DB_USER,   // Database user's name.
     pass: process.env.DB_PASS,   // Database user's password.
-    useNewUrlParser: true,       // Use the new URL parser for MongoDB connection strings.
-    useUnifiedTopology: true,    // Use the new engine for MongoDB driver's topology management.
   } as ConnectOptions)
   .then(() => {
     console.log('Mongodb connected..') // Log on successful connection.
@@ -744,10 +736,10 @@ export default async () => {
   });
 };
                 ` },
-        {
-            folder: 'Middleware', name: 'fileUpload.ts',
-            content:
-                `
+      {
+        folder: 'Middleware', name: 'fileUpload.ts',
+        content:
+          `
 
 /**
  * This module exports a middleware function for handling file uploads.
@@ -808,9 +800,9 @@ const uploadMiddleware = async (req: FastifyRequest, reply: FastifyReply) => {
 export default uploadMiddleware;           
 
                 ` },
-                {
-                  folder: '', name: '.env.example', content:
-                    `PORT=3000
+      {
+        folder: '', name: '.env.example', content:
+          `PORT=3000
 MONGODB_URI=mongodb://localhost:27017/
 DB_NAME=test
 DB_USER=
@@ -818,10 +810,10 @@ DB_PASS=
 IS_HTTPS=false
 KEYPATH=
 CARTPATH=
-JWT_SECRET=` } ,
-{
-  folder: '', name: 'tsconfig.json', content:
-      `
+JWT_SECRET=` },
+      {
+        folder: '', name: 'tsconfig.json', content:
+          `
 {
 "compilerOptions": {
 "module": "commonjs",
@@ -839,19 +831,19 @@ JWT_SECRET=` } ,
 "include": ["*"]
 }
 
-` 
-} ,
-{
-  folder: '', name: '.gitignore', content:
-      `node_modules
+`
+      },
+      {
+        folder: '', name: '.gitignore', content:
+          `node_modules
 dist
 package-lock.json
 .env.example
-` 
-},
+`
+      },
       {
         folder: '', name: 'README.md', content:
-            `
+          `
 # *${Projectname}*
 
 This project was generated using node-initdb, a CLI tool for initializing database configurations, web framework setups, and project structures in Node.js projects. *This setup requires you to choose one option from each category: a database, a web framework, a language, and a package manager.*
@@ -937,6 +929,172 @@ For more information, visit:
 If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.com or open an issue on GitHub.
 
             ` } // Empty .env file
-    ]},
-    cmd : '@fastify/formbody @fastify/cors @fastify/static bcryptjs config fastify fastify-jwt jsonwebtoken mongoose multer typescript dotenv fastify fastify-jwt fs ts-node @fastify/jwt mongoose @fastify/multipart @types/bcryptjs @types/config @types/jsonwebtoken @types/mongoose @types/multer concurrently'
+    ];
+    if (options && options.compress) {
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'compressMiddleware.ts',
+        content: `import util from 'util';
+import path from 'path';
+import fs from 'fs';
+import { pipeline } from 'stream';
+const pump = util.promisify(pipeline);
+import sharp from 'sharp';
+import archiver from 'archiver';
+import ffmpeg from 'fluent-ffmpeg';
+import { FastifyRequest, FastifyReply } from 'fastify';
+
+const IMAGE_SIZE_THRESHOLD = 5 * 1024 * 1024;   // 5MB
+const VIDEO_SIZE_THRESHOLD = 100 * 1024 * 1024; // 100MB
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tiff'];
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
+
+async function compressImage(filePath: string, ext: string) {
+    const compressedPath = filePath.replace('.' + ext, '-compressed.' + ext);
+    const outputFormat = ext === 'jpg' ? 'jpeg' : ext;
+
+    await (sharp(filePath) as any)
+        // @ts-ignore
+        [outputFormat]({ quality: 80, effort: 6 })
+        .toFile(compressedPath);
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath);
+        console.log(\`Image compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressVideo(filePath: string, options: any = {}) {
+    const { crf = 28, preset = 'fast', resolution = null } = options;
+    const ext = path.extname(filePath);
+    const compressedPath = filePath.replace(ext, '-compressed.mp4');
+
+    await new Promise((resolve, reject) => {
+        let command = ffmpeg(filePath)
+            .videoCodec('libx264')
+            .audioCodec('aac')
+            .outputOptions([
+                '-crf ' + crf,
+                '-preset ' + preset,
+                '-movflags +faststart',
+            ])
+            .format('mp4');
+
+        if (resolution) {
+            command = command.size(resolution);
+        }
+
+        command
+            .on('end', resolve)
+            .on('error', reject)
+            .save(compressedPath);
+    });
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath.replace(ext, '.mp4'));
+        console.log(\`Video compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Video compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressFileZip(filePath: string) {
+    const zipPath = filePath + '.zip';
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    return new Promise<void>((resolve, reject) => {
+        output.on('close', () => {
+            const originalSize = fs.statSync(filePath).size;
+            const compressedSize = fs.statSync(zipPath).size;
+
+            if (compressedSize < originalSize) {
+                fs.unlinkSync(filePath);
+                console.log(\`File compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+            } else {
+                fs.unlinkSync(zipPath);
+                console.log('Compression did not reduce size, keeping original.');
+            }
+            resolve();
+        });
+        archive.on('error', reject);
+        archive.pipe(output);
+        archive.file(filePath, { name: path.basename(filePath) });
+        archive.finalize();
+    });
+}
+
+export async function compressFile(req: any, reply: FastifyReply) {
+    if (!req.isMultipart || !req.isMultipart()) {
+        return;
+    }
+
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    req.body = req.body || {};
+    req.savedFiles = [];
+
+    try {
+        const parts = req.parts();
+        for await (const part of parts) {
+            if (part.type === 'file') {
+                const ext = path.extname(part.filename).replace('.', '').toLowerCase();
+                const filePath = path.join(uploadsDir, Date.now() + '-' + part.filename);
+                
+                await pump(part.file as any, fs.createWriteStream(filePath));
+                
+                const isVideo = VIDEO_EXTENSIONS.includes(ext);
+                const threshold = isVideo ? VIDEO_SIZE_THRESHOLD : IMAGE_SIZE_THRESHOLD;
+                const fileSize = fs.statSync(filePath).size;
+                
+                if (fileSize > threshold) {
+                    if (IMAGE_EXTENSIONS.includes(ext)) {
+                        await compressImage(filePath, ext);
+                    } else if (isVideo) {
+                        await compressVideo(filePath, req.videoCompressOptions || {});
+                    } else {
+                        await compressFileZip(filePath);
+                    }
+                }
+                
+                req.savedFiles.push({
+                    fieldname: part.fieldname,
+                    filename: part.filename,
+                    path: filePath
+                });
+            } else {
+                req.body[part.fieldname] = (part as any).value;
+            }
+        }
+    } catch (err) {
+        console.error('Multipart parsing/compression error:', err);
+        if (req.savedFiles) {
+            for (const file of req.savedFiles) {
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+            }
+        }
+    }
+}
+`
+      });
+    }
+    return filesArray;
+  },
+  cmd: '@fastify/formbody @fastify/cors @fastify/static bcryptjs config fastify fastify-jwt jsonwebtoken mongoose multer @fastify/jwt @fastify/multipart @types/bcryptjs @types/config @types/jsonwebtoken @types/mongoose @types/multer'
 }

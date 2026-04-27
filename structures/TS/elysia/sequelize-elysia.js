@@ -1,11 +1,12 @@
 module.exports = {
-    folders: ['config', 'Controllers' , 'Routes', 'Models', 'uploads', 'Middleware' , 'Utils'],
-    files: (index,Projectname) =>{return [
-        {
-            folder: 'Controllers',
-            name: 'health.Controller.ts',
-            content:
-                `
+  folders: ['config', 'Controllers', 'Routes', 'Models', 'uploads', 'Middleware', 'Utils'],
+  files: (index, Projectname, options) => {
+    let filesArray = [
+      {
+        folder: 'Controllers',
+        name: 'health.Controller.ts',
+        content:
+          `
 import ResponseHandler from '../Utils/responseHandler';  // Import the ResponseHandler class
 import { Codes, Messages } from '../Utils/httpCodesAndMessages';  // Import HTTP status codes and messages
 
@@ -32,17 +33,13 @@ export const getHealth = ({ store, set }: any) => {
 
 };
                 ` },
-        {
-            folder: 'Routes',
-            name: 'health.Route.ts',
-            content:
-                `
+      {
+        folder: 'Routes',
+        name: 'health.Route.ts',
+        content:
+          `
 import { Elysia } from "elysia";
 import { getHealth } from "../Controllers/health.Controller";
-import { config } from "dotenv";
-
-// Load environment variables from .env file
-config()
 
 /**
  * Defines health check routes for the application.
@@ -59,11 +56,11 @@ export const healthRoutes = (app: Elysia): any=> {
         .get("/health", getHealth)
 };               
                 ` },
-                {
-                  folder: 'Routes',
-                  name: 'index.Route.ts',
-                  content:
-                      `
+      {
+        folder: 'Routes',
+        name: 'index.Route.ts',
+        content:
+          `
 import { Elysia } from "elysia";
 import { healthRoutes } from "./health.Route";
 
@@ -73,10 +70,10 @@ export const registerRoutes = (app: Elysia): Elysia  => {
 
 };
             ` },
-                {
-                    folder: 'Middleware', name: 'fileUpload.ts',
-                    content:
-                        `
+      {
+        folder: 'Middleware', name: 'fileUpload.ts',
+        content:
+          `
 /**
  * @fileoverview This module sets up and exports a configured Multer instance 
  * for handling file uploads in a Node.js application. It includes:
@@ -118,11 +115,11 @@ const upload = async (context:any) => {
 
 export default upload;
                 ` },
-        {
-            folder: 'Models',
-            name: 'example.Model.ts',
-            content:
-                `
+      {
+        folder: 'Models',
+        name: 'example.Model.ts',
+        content:
+          `
 import mongoose, { Schema } from 'mongoose';
 
 // Define the schema
@@ -302,10 +299,10 @@ const ExampleModel = mongoose.model('ExampleModel', ExampleSchema);
 export default ExampleModel;
                 
         ` },
-        { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
-        {
-            folder: 'Utils', name: 'httpCodesAndMessages.ts', content:
-                `
+      { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
+      {
+        folder: 'Utils', name: 'httpCodesAndMessages.ts', content:
+          `
 /**
  * HTTP Status Codes
  * This object maps standard HTTP status codes to their numeric values.
@@ -423,10 +420,10 @@ export const Messages = {
 export type StatusCodes = keyof typeof Codes
 export type StatusMessages = keyof typeof Messages                        
                 `
-        },
-        {
-            folder : 'Utils', name : 'validations.ts', content :
-            `
+      },
+      {
+        folder: 'Utils', name: 'validations.ts', content:
+          `
 // Validation.ts
 const emailRegex: RegExp = /^[^s@]+@[^s@]+.[^s@]+$/;
 const phoneRegex: RegExp =  /^\d{3}-\d{3}-\d{4}$/;
@@ -496,9 +493,9 @@ export {
 };
             
             `
-        },
-        {
-          folder : 'Middleware', name : 'jwtToken.ts', content :
+      },
+      {
+        folder: 'Middleware', name: 'jwtToken.ts', content:
           `'use strict'
 import { Codes } from "../Utils/httpCodesAndMessages";
 import ResponseHandler from "../Utils/responseHandler";
@@ -584,9 +581,9 @@ export const createToken = async ({body , jwt}: any) => {
 }
           `
       },
-        {
-            folder: 'Utils', name: 'responseHandler.ts', content:
-                `
+      {
+        folder: 'Utils', name: 'responseHandler.ts', content:
+          `
 // export default ResponseHandler
 import { Codes, Messages } from './httpCodesAndMessages'
 
@@ -639,11 +636,10 @@ class ResponseHandler {
 
 export default ResponseHandler
 ` },
-        {
-            folder: '', name: index, content:
-                `
+      {
+        folder: '', name: index, content:
+          `
 import { Elysia } from "elysia";
-import { config } from "dotenv";
 import cors from "@elysiajs/cors";
 import { healthRoutes } from "./Routes/health.Route";
 import { rateLimit } from "elysia-rate-limit";
@@ -663,10 +659,6 @@ import  initModels  from "./config/initModels"; // Importing model initializatio
 initModels(); // Initializing models
 // Initialize MongoDB connection
 // mongoDBConnection();
-
-// Load environment variables from .env file
-config();
-
 
 // Set the port, defaulting to 3000 if not defined
 const PORT: number = Number(process.env.PORT) || 3000;
@@ -752,10 +744,10 @@ const app = new Elysia({adapter: node()})
 // Log the server status
 console.log('🦊 Elysia is running at app.server?.hostname:app.server?.port');
                 ` },
-        {
-            folder: 'config', name: 'dbConfig.ts',
-            content:
-                `
+      {
+        folder: 'config', name: 'dbConfig.ts',
+        content:
+          `
 import { Sequelize } from "sequelize";
 
 // Initialize Sequelize with MySQL connection using environment variables
@@ -785,8 +777,9 @@ const connectDB = async (): Promise<void> => {
 export { sequelize, connectDB };
                                                         
     ` },
-    { folder: 'config', name: 'initModels.ts',
-                content:`
+      {
+        folder: 'config', name: 'initModels.ts',
+        content: `
 const initModels = (): void => {
     // Associate models here if necessary
     // e.g., User.hasMany(Posts);
@@ -795,9 +788,9 @@ const initModels = (): void => {
 export default initModels ;
                               
                 `},
-        {
-            folder: '', name: '.env', content:
-                `PORT=3000
+      {
+        folder: '', name: '.env', content:
+          `PORT=3000
 DB_HOST=localhost
 DB_NAME=test
 DB_USER=
@@ -806,9 +799,9 @@ IS_HTTPS=false
 KEYPATH=
 CARTPATH=
 JWT_SECRET=` }, // Empty .env file
-{
-    folder: '', name: 'tsconfig.json', content:
-        `
+      {
+        folder: '', name: 'tsconfig.json', content:
+          `
 {
   "compilerOptions": {
   "module": "commonjs",
@@ -825,18 +818,18 @@ JWT_SECRET=` }, // Empty .env file
   },
   "include": ["*"]
   }
-` 
-} ,
-  {
-    folder: '', name: '.gitignore', content:
-        `node_modules
+`
+      },
+      {
+        folder: '', name: '.gitignore', content:
+          `node_modules
 package-lock.json
 .env
-` 
-} ,
-{
-    folder: '', name: 'README.md', content:
-        `
+`
+      },
+      {
+        folder: '', name: 'README.md', content:
+          `
 # *${Projectname}*
 
 This project was generated using node-initdb, a CLI tool for initializing database configurations, web framework setups, and project structures in Node.js projects. *This setup requires you to choose one option from each category: a database, a web framework, a language, and a package manager.*
@@ -922,6 +915,158 @@ For more information, visit:
 If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.com or open an issue on GitHub.
 
         ` }
-    ]},
-    cmd : '@elysiajs/cookie @elysiajs/cors @elysiajs/jwt @types/bcryptjs @types/busboy @types/mongoose @types/multer bcryptjs busboy dotenv elysia elysia-helmet elysia-rate-limit helmet mongoose multer sequelize-typescript @types/jsonwebtoken typescript @elysiajs/node sequelize mysql2'
+    ];
+    if (options && options.compress) {
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'compressMiddleware.ts',
+        content: `import sharp from 'sharp';
+import archiver from 'archiver';
+import fs from 'fs';
+import path from 'path';
+import ffmpeg from 'fluent-ffmpeg';
+
+const IMAGE_SIZE_THRESHOLD = 5 * 1024 * 1024;   // 5MB
+const VIDEO_SIZE_THRESHOLD = 100 * 1024 * 1024; // 100MB
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tiff'];
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
+
+async function compressImage(filePath: string, ext: string) {
+    const compressedPath = filePath.replace('.' + ext, '-compressed.' + ext);
+    const outputFormat = ext === 'jpg' ? 'jpeg' : ext;
+
+    await (sharp(filePath) as any)
+    // @ts-ignore
+    [outputFormat]({ quality: 80, effort: 6 })
+        .toFile(compressedPath);
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath);
+        console.log(\`Image compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressVideo(filePath: string, options: any = {}) {
+    const { crf = 28, preset = 'fast', resolution = null } = options;
+    const ext = path.extname(filePath);
+    const compressedPath = filePath.replace(ext, '-compressed.mp4');
+
+    await new Promise((resolve, reject) => {
+        let command = ffmpeg(filePath)
+            .videoCodec('libx264')
+            .audioCodec('aac')
+            .outputOptions([
+                '-crf ' + crf,
+                '-preset ' + preset,
+                '-movflags +faststart',
+            ])
+            .format('mp4');
+
+        if (resolution) {
+            command = command.size(resolution);
+        }
+
+        command
+            .on('end', resolve)
+            .on('error', reject)
+            .save(compressedPath);
+    });
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath.replace(ext, '.mp4'));
+        console.log(\`Video compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Video compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressFileZip(filePath: string) {
+    const zipPath = filePath + '.zip';
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    return new Promise<void>((resolve, reject) => {
+        output.on('close', () => {
+            const originalSize = fs.statSync(filePath).size;
+            const compressedSize = fs.statSync(zipPath).size;
+
+            if (compressedSize < originalSize) {
+                fs.unlinkSync(filePath);
+                console.log(\`File compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+            } else {
+                fs.unlinkSync(zipPath);
+                console.log('Compression did not reduce size, keeping original.');
+            }
+            resolve();
+        });
+        archive.on('error', reject);
+        archive.pipe(output);
+        archive.file(filePath, { name: path.basename(filePath) });
+        archive.finalize();
+    });
+}
+
+export const compressFile = async ({ body }: any) => {
+    const processingFiles: string[] = [];
+    try {
+        if (!body || !body.file) return;
+
+        const files = Array.isArray(body.file) ? body.file : [body.file];
+
+        await Promise.all(
+            files.map(async (file: any) => {
+                if (!file || !file.name) return;
+                const ext = path.extname(file.name).replace('.', '').toLowerCase();
+                const isVideo = VIDEO_EXTENSIONS.includes(ext);
+                const threshold = isVideo ? VIDEO_SIZE_THRESHOLD : IMAGE_SIZE_THRESHOLD;
+
+                if (file.size <= threshold) return;
+
+                const uploadsDir = path.join(process.cwd(), 'uploads');
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
+                }
+                const filePath = path.join(uploadsDir, Date.now() + '-' + file.name);
+                processingFiles.push(filePath);
+                
+                const buffer = Buffer.from(await file.arrayBuffer());
+                fs.writeFileSync(filePath, buffer);
+
+                if (IMAGE_EXTENSIONS.includes(ext)) {
+                    await compressImage(filePath, ext);
+                } else if (isVideo) {
+                    await compressVideo(filePath, body.videoCompressOptions || {});
+                } else {
+                    await compressFileZip(filePath);
+                }
+                
+                file.savedPath = filePath;
+            })
+        );
+    } catch (err) {
+        console.error('Compression error:', err);
+        for (const filePath of processingFiles) {
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+    }
+};
+`
+      });
+    }
+    return filesArray;
+  },
+  cmd: '@elysiajs/cookie @elysiajs/cors @elysiajs/jwt @types/bcryptjs @types/busboy @types/mongoose @types/multer bcryptjs busboy elysia elysia-helmet elysia-rate-limit helmet mongoose multer sequelize-typescript @types/jsonwebtoken @elysiajs/node sequelize mysql2'
 }    

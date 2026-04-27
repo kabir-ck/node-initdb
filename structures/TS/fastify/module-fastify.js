@@ -1,8 +1,9 @@
 module.exports = {
-    folders: ['Controllers', 'Routes', 'Models'],
-    mfiles:(name) =>{
-        return [{folder: 'Models', name: `${name}.Model.ts`, content:
-            `
+  folders: ['Controllers', 'Routes', 'Models', 'Middleware'],
+  mfiles: (name, options) => {
+    let files = [{
+      folder: 'Models', name: `${name}.Model.ts`, content:
+        `
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface I${name} extends Document {
@@ -158,13 +159,13 @@ const ${name}Model: Model<I${name}> = mongoose.model<I${name}>('${name}Model', $
 export default ${name}Model;
 
 `
-        },
-      
-        {
-          folder: 'Controllers',
-          name: `${name}.Controller.ts`,
-          content:
-              `
+    },
+
+    {
+      folder: 'Controllers',
+      name: `${name}.Controller.ts`,
+      content:
+        `
 // Importing HTTP status codes and messages from utilities
 import { Codes, Messages } from '../Utils/httpCodesAndMessages';
 // Importing the response handler utility for managing API responses
@@ -253,11 +254,11 @@ export default {
 };
               ` },
 
-        {
-          folder: 'Routes',
-          name: `${name}.Route.ts`,
-          content:
-              `
+    {
+      folder: 'Routes',
+      name: `${name}.Route.ts`,
+      content:
+        `
 /**
  * This module exports a function that defines routes for user operations.
  * It imports the UserController and sets up routes for creating, getting, updating, and deleting users.
@@ -265,6 +266,7 @@ export default {
 
 import ${name}Controller from '../Controllers/${name}.Controller';
 import { FastifyInstance } from 'fastify';
+${options && options.compress ? `import fastifyMultipart from '@fastify/multipart';\nimport { compressFile } from '../Middleware/compressMiddleware';` : ''}
 
 /**
  * This function is used to define routes for the Fastify server related to user operations.
@@ -274,7 +276,7 @@ import { FastifyInstance } from 'fastify';
  * @param {Object} options - Options for the route.
  */
 async function ${name}Routes(fastify: FastifyInstance) {
-    fastify.post("/" ,${name}Controller.create${name});
+${options && options.compress ? `    fastify.register(fastifyMultipart);\n    fastify.post("/" , { preHandler: [compressFile] }, ${name}Controller.create${name});` : `    fastify.post("/" ,${name}Controller.create${name});`}
     fastify.get("/" ,${name}Controller.get${name});
     fastify.put("/" ,${name}Controller.update${name});
     fastify.delete("/" ,${name}Controller.delete${name});
@@ -282,10 +284,176 @@ async function ${name}Routes(fastify: FastifyInstance) {
 
 export default ${name}Routes;
               ` },
-      ]
-    },
-    sfiles:(name) =>{
-      return [{folder: 'Models', name: `${name}.Model.ts`, content:`
+    ]
+    if (options && options.compress) {
+      files.push({
+        folder: 'Middleware',
+        name: 'compressMiddleware.ts',
+        content: `import util from 'util';
+import path from 'path';
+import fs from 'fs';
+import { pipeline } from 'stream';
+const pump = util.promisify(pipeline);
+import sharp from 'sharp';
+import archiver from 'archiver';
+import ffmpeg from 'fluent-ffmpeg';
+import { FastifyRequest, FastifyReply } from 'fastify';
+
+const IMAGE_SIZE_THRESHOLD = 5 * 1024 * 1024;   // 5MB
+const VIDEO_SIZE_THRESHOLD = 100 * 1024 * 1024; // 100MB
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tiff'];
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
+
+async function compressImage(filePath: string, ext: string) {
+    const compressedPath = filePath.replace('.' + ext, '-compressed.' + ext);
+    const outputFormat = ext === 'jpg' ? 'jpeg' : ext;
+
+    await (sharp(filePath) as any)
+        // @ts-ignore
+        [outputFormat]({ quality: 80, effort: 6 })
+        .toFile(compressedPath);
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath);
+        console.log(\`Image compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressVideo(filePath: string, options: any = {}) {
+    const { crf = 28, preset = 'fast', resolution = null } = options;
+    const ext = path.extname(filePath);
+    const compressedPath = filePath.replace(ext, '-compressed.mp4');
+
+    await new Promise((resolve, reject) => {
+        let command = ffmpeg(filePath)
+            .videoCodec('libx264')
+            .audioCodec('aac')
+            .outputOptions([
+                '-crf ' + crf,
+                '-preset ' + preset,
+                '-movflags +faststart',
+            ])
+            .format('mp4');
+
+        if (resolution) {
+            command = command.size(resolution);
+        }
+
+        command
+            .on('end', resolve)
+            .on('error', reject)
+            .save(compressedPath);
+    });
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath.replace(ext, '.mp4'));
+        console.log(\`Video compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Video compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressFileZip(filePath: string) {
+    const zipPath = filePath + '.zip';
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    return new Promise<void>((resolve, reject) => {
+        output.on('close', () => {
+            const originalSize = fs.statSync(filePath).size;
+            const compressedSize = fs.statSync(zipPath).size;
+
+            if (compressedSize < originalSize) {
+                fs.unlinkSync(filePath);
+                console.log(\`File compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+            } else {
+                fs.unlinkSync(zipPath);
+                console.log('Compression did not reduce size, keeping original.');
+            }
+            resolve();
+        });
+        archive.on('error', reject);
+        archive.pipe(output);
+        archive.file(filePath, { name: path.basename(filePath) });
+        archive.finalize();
+    });
+}
+
+export async function compressFile(req: any, reply: FastifyReply) {
+    if (!req.isMultipart || !req.isMultipart()) {
+        return;
+    }
+
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    req.body = req.body || {};
+    req.savedFiles = [];
+
+    try {
+        const parts = req.parts();
+        for await (const part of parts) {
+            if (part.type === 'file') {
+                const ext = path.extname(part.filename).replace('.', '').toLowerCase();
+                const filePath = path.join(uploadsDir, Date.now() + '-' + part.filename);
+                
+                await pump(part.file as any, fs.createWriteStream(filePath));
+                
+                const isVideo = VIDEO_EXTENSIONS.includes(ext);
+                const threshold = isVideo ? VIDEO_SIZE_THRESHOLD : IMAGE_SIZE_THRESHOLD;
+                const fileSize = fs.statSync(filePath).size;
+                
+                if (fileSize > threshold) {
+                    if (IMAGE_EXTENSIONS.includes(ext)) {
+                        await compressImage(filePath, ext);
+                    } else if (isVideo) {
+                        await compressVideo(filePath, req.videoCompressOptions || {});
+                    } else {
+                        await compressFileZip(filePath);
+                    }
+                }
+                
+                req.savedFiles.push({
+                    fieldname: part.fieldname,
+                    filename: part.filename,
+                    path: filePath
+                });
+            } else {
+                req.body[part.fieldname] = (part as any).value;
+            }
+        }
+    } catch (err) {
+        console.error('Multipart parsing/compression error:', err);
+        if (req.savedFiles) {
+            for (const file of req.savedFiles) {
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+            }
+        }
+    }
+}
+`
+      });
+    }
+    return files;
+  },
+  sfiles: (name, options) => {
+    let files = [{
+      folder: 'Models', name: `${name}.Model.ts`, content: `
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/dbConfig"; // Ensure correct path
 
@@ -459,7 +627,7 @@ export default ${name}Model;
     {
       folder: 'Controllers',
       name: `${name}.Controller.ts`,
-      content:`
+      content: `
 // Importing HTTP status codes and messages from utilities
 import { Codes, Messages } from '../Utils/httpCodesAndMessages';
 // Importing the response handler utility for managing API responses
@@ -556,7 +724,7 @@ export const ${name}Controller = {
       folder: 'Routes',
       name: `${name}.Route.ts`,
       content:
-          `
+        `
 /**
  * This module exports a function that defines routes for ${name} operations.
  * It imports the ${name}Controller and sets up routes for creating, getting, updating, and deleting ${name}s.
@@ -564,6 +732,7 @@ export const ${name}Controller = {
 
 import { FastifyInstance } from 'fastify/fastify';
 import { ${name}Controller } from '../Controllers/${name}.Controller';
+${options && options.compress ? `import fastifyMultipart from '@fastify/multipart';\nimport { compressFile } from '../Middleware/compressMiddleware';` : ''}
 
 /**
  * This function is used to define routes for the Fastify server related to ${name} operations.
@@ -574,7 +743,7 @@ import { ${name}Controller } from '../Controllers/${name}.Controller';
  */
 
 async function ${name}Routes(fastify: FastifyInstance) {
-    fastify.post("/" ,${name}Controller.create${name});
+${options && options.compress ? `    fastify.register(fastifyMultipart);\n    fastify.post("/" , { preHandler: [compressFile] }, ${name}Controller.create${name});` : `    fastify.post("/" ,${name}Controller.create${name});`}
     fastify.get("/" ,${name}Controller.get${name});
     fastify.put("/" ,${name}Controller.update${name});
     fastify.delete("/" ,${name}Controller.delete${name});
@@ -583,6 +752,171 @@ async function ${name}Routes(fastify: FastifyInstance) {
 export default ${name}Routes;
           ` }
     ]
+    if (options && options.compress) {
+      files.push({
+        folder: 'Middleware',
+        name: 'compressMiddleware.ts',
+        content: `import util from 'util';
+import path from 'path';
+import fs from 'fs';
+import { pipeline } from 'stream';
+const pump = util.promisify(pipeline);
+import sharp from 'sharp';
+import archiver from 'archiver';
+import ffmpeg from 'fluent-ffmpeg';
+import { FastifyRequest, FastifyReply } from 'fastify';
+
+const IMAGE_SIZE_THRESHOLD = 5 * 1024 * 1024;   // 5MB
+const VIDEO_SIZE_THRESHOLD = 100 * 1024 * 1024; // 100MB
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tiff'];
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
+
+async function compressImage(filePath: string, ext: string) {
+    const compressedPath = filePath.replace('.' + ext, '-compressed.' + ext);
+    const outputFormat = ext === 'jpg' ? 'jpeg' : ext;
+
+    await (sharp(filePath) as any)
+        // @ts-ignore
+        [outputFormat]({ quality: 80, effort: 6 })
+        .toFile(compressedPath);
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath);
+        console.log(\`Image compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Compression did not reduce size, keeping original.');
     }
+}
+
+async function compressVideo(filePath: string, options: any = {}) {
+    const { crf = 28, preset = 'fast', resolution = null } = options;
+    const ext = path.extname(filePath);
+    const compressedPath = filePath.replace(ext, '-compressed.mp4');
+
+    await new Promise((resolve, reject) => {
+        let command = ffmpeg(filePath)
+            .videoCodec('libx264')
+            .audioCodec('aac')
+            .outputOptions([
+                '-crf ' + crf,
+                '-preset ' + preset,
+                '-movflags +faststart',
+            ])
+            .format('mp4');
+
+        if (resolution) {
+            command = command.size(resolution);
+        }
+
+        command
+            .on('end', resolve)
+            .on('error', reject)
+            .save(compressedPath);
+    });
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath.replace(ext, '.mp4'));
+        console.log(\`Video compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Video compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressFileZip(filePath: string) {
+    const zipPath = filePath + '.zip';
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    return new Promise<void>((resolve, reject) => {
+        output.on('close', () => {
+            const originalSize = fs.statSync(filePath).size;
+            const compressedSize = fs.statSync(zipPath).size;
+
+            if (compressedSize < originalSize) {
+                fs.unlinkSync(filePath);
+                console.log(\`File compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+            } else {
+                fs.unlinkSync(zipPath);
+                console.log('Compression did not reduce size, keeping original.');
+            }
+            resolve();
+        });
+        archive.on('error', reject);
+        archive.pipe(output);
+        archive.file(filePath, { name: path.basename(filePath) });
+        archive.finalize();
+    });
+}
+
+export async function compressFile(req: any, reply: FastifyReply) {
+    if (!req.isMultipart || !req.isMultipart()) {
+        return;
+    }
+
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    req.body = req.body || {};
+    req.savedFiles = [];
+
+    try {
+        const parts = req.parts();
+        for await (const part of parts) {
+            if (part.type === 'file') {
+                const ext = path.extname(part.filename).replace('.', '').toLowerCase();
+                const filePath = path.join(uploadsDir, Date.now() + '-' + part.filename);
+                
+                await pump(part.file as any, fs.createWriteStream(filePath));
+                
+                const isVideo = VIDEO_EXTENSIONS.includes(ext);
+                const threshold = isVideo ? VIDEO_SIZE_THRESHOLD : IMAGE_SIZE_THRESHOLD;
+                const fileSize = fs.statSync(filePath).size;
+                
+                if (fileSize > threshold) {
+                    if (IMAGE_EXTENSIONS.includes(ext)) {
+                        await compressImage(filePath, ext);
+                    } else if (isVideo) {
+                        await compressVideo(filePath, req.videoCompressOptions || {});
+                    } else {
+                        await compressFileZip(filePath);
+                    }
+                }
+                
+                req.savedFiles.push({
+                    fieldname: part.fieldname,
+                    filename: part.filename,
+                    path: filePath
+                });
+            } else {
+                req.body[part.fieldname] = (part as any).value;
+            }
+        }
+    } catch (err) {
+        console.error('Multipart parsing/compression error:', err);
+        if (req.savedFiles) {
+            for (const file of req.savedFiles) {
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+            }
+        }
+    }
+}
+`
+      });
+    }
+    return files;
+  }
 
 }

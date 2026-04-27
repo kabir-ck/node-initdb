@@ -1,11 +1,12 @@
 module.exports = {
-    folders: ['config','Controllers', 'Routes', 'Models', 'uploads', 'Middleware' , 'Utils'],
-    files:(index,Projectname) =>{return  [
-        {
-            folder: 'Controllers',
-            name: 'health.Controller.js',
-            content:
-                `
+    folders: ['config', 'Controllers', 'Routes', 'Models', 'uploads', 'Middleware', 'Utils'],
+    files: (index, Projectname, options) => {
+        let filesArray = [
+            {
+                folder: 'Controllers',
+                name: 'health.Controller.js',
+                content:
+                    `
   // Importing HTTP status codes and messages from utilities
   const { Codes, Messages } = require("../Utils/httpCodesAndMessages");
   // Importing the response handler utility for managing API responses
@@ -26,11 +27,11 @@ module.exports = {
       }
   }
                 ` },
-        {
-            folder: 'Routes',
-            name: 'health.Route.js',
-            content:
-                `
+            {
+                folder: 'Routes',
+                name: 'health.Route.js',
+                content:
+                    `
 // Importing the express module to create router instances and handle the routing
 const express = require("express");
 // Creating a router instance from express to define route handlers
@@ -45,11 +46,11 @@ router.get("/" ,HealthController.Health);
 // Exporting the router instance to be used in other parts of the application
 module.exports = router;
                 ` },
-                {
-                  folder: 'Routes',
-                  name: 'index.Route.js',
-                  content:
-                      `
+            {
+                folder: 'Routes',
+                name: 'index.Route.js',
+                content:
+                    `
 const express = require("express");
 const apiV1Router = express.Router(); // Creating a new router for API version 1
 
@@ -59,11 +60,11 @@ apiV1Router.use("/Health", RoutesHealth);
 
 module.exports = apiV1Router;         
             ` },
-        {
-            folder: 'Models',
-            name: 'example.Model.js',
-            content:
-                `
+            {
+                folder: 'Models',
+                name: 'example.Model.js',
+                content:
+                    `
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -184,10 +185,10 @@ const ExampleModel = mongoose.model('ExampleModel', ExampleSchema);
 module.exports = ExampleModel;
                 
         ` },
-        { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
-        {
-            folder: 'Utils', name: 'httpCodesAndMessages.js', content:
-                `
+            { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
+            {
+                folder: 'Utils', name: 'httpCodesAndMessages.js', content:
+                    `
 // HTTP Status Codes
 // This object maps standard HTTP status codes to their numeric values.
 const Codes = {
@@ -297,10 +298,10 @@ const Messages = {
 
 module.exports = { Codes, Messages };                             
                 `
-        },
-        {
-            folder : 'Utils', name : 'validations.js', content :
-            `
+            },
+            {
+                folder: 'Utils', name: 'validations.js', content:
+                    `
 // Validation.js
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 international phone number format
@@ -370,10 +371,10 @@ module.exports = {
 };
             
             `
-        },
-        {
-            folder : 'Middleware', name : 'jwtToken.js', content :
-            `'use strict'
+            },
+            {
+                folder: 'Middleware', name: 'jwtToken.js', content:
+                    `'use strict'
 // jwtHelper.js
 const jwt = require('jsonwebtoken');
 const ResponseHandler = require('../Utils/responseHandler');
@@ -442,10 +443,10 @@ class JWTHelper {
 module.exports = JWTHelper;
             
             `
-        },
-        {
-            folder: 'Utils', name: 'responseHandler.js', content:
-                `
+            },
+            {
+                folder: 'Utils', name: 'responseHandler.js', content:
+                    `
 /**
  * This module provides a utility class for handling HTTP responses in a standardized way.
  * It includes methods for sending success and error responses with customizable status codes and messages.
@@ -501,9 +502,9 @@ class ResponseHandler {
 
 module.exports = ResponseHandler;
 ` },
-        {
-            folder: '', name: index, content:
-                `
+            {
+                folder: '', name: index, content:
+                    `
 const express = require("express"); // Importing express module for server operations
 const createError = require("http-errors"); // Importing module to create HTTP errors
 const dotenv = require("dotenv") // Importing dotenv to load environment variables
@@ -573,10 +574,10 @@ if (process.env.IS_HTTPS == "true") {
     });
 }
                 ` },
-        {
-            folder: 'config', name: 'dbConfig.js',
-            content:
-                `
+            {
+                folder: 'config', name: 'dbConfig.js',
+                content:
+                    `
 const mongoose = require('mongoose');
 
 // This module exports a function that sets up the MongoDB connection using Mongoose.
@@ -587,8 +588,6 @@ module.exports = () => {
       dbName: process.env.DB_NAME, // Name of the database to connect to.
       user: process.env.DB_USER,   // Database user's name.
       pass: process.env.DB_PASS,   // Database user's password.
-      useNewUrlParser: true,       // Use the new URL parser for MongoDB connection strings.
-      useUnifiedTopology: true,    // Use the new engine for MongoDB driver's topology management.
     })
     .then(() => {
       console.log('Mongodb connected....') // Log on successful connection.
@@ -622,10 +621,10 @@ module.exports = () => {
   });
 };
                 ` },
-        {
-            folder: 'Middleware', name: 'fileUpload.js',
-            content:
-                `
+            {
+                folder: 'Middleware', name: 'fileUpload.js',
+                content:
+                    `
 /**
  * @fileoverview This module sets up and exports a configured Multer instance 
  * for handling file uploads in a Node.js application. It includes:
@@ -666,9 +665,9 @@ module.exports = upload; // Export configured multer instance
 
 
                 ` },
-                {
-                  folder: '', name: '.env.development', content:
-                      `PORT=3000
+            {
+                folder: '', name: '.env.development', content:
+                    `PORT=3000
 MONGODB_URI=mongodb://localhost:27017/
 DB_NAME=test
 DB_USER=
@@ -677,10 +676,10 @@ IS_HTTPS=false
 KEYPATH=
 CARTPATH=
 JWT_SECRET=
-NODE_ENV=development ` } ,
-                {
-                  folder: '', name: '.env.production', content:
-                      `PORT=3000
+NODE_ENV=development ` },
+            {
+                folder: '', name: '.env.production', content:
+                    `PORT=3000
 MONGODB_URI=mongodb://localhost:27017/
 DB_NAME=test
 DB_USER=
@@ -689,17 +688,17 @@ IS_HTTPS=false
 KEYPATH=
 CARTPATH=
 JWT_SECRET=
-NODE_ENV=production ` } ,
-{
-  folder: '', name: '.gitignore', content:
-      `node_modules
+NODE_ENV=production ` },
+            {
+                folder: '', name: '.gitignore', content:
+                    `node_modules
 package-lock.json
 .env
-` 
-} ,
-      {
-        folder: '', name: 'README.md', content:
 `
+            },
+            {
+                folder: '', name: 'README.md', content:
+                    `
 # *${Projectname}*
 
 This project was generated using node-initdb, a CLI tool for initializing database configurations, web framework setups, and project structures in Node.js projects. *This setup requires you to choose one option from each category: a database, a web framework, a language, and a package manager.*
@@ -785,6 +784,168 @@ For more information, visit:
 If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.com or open an issue on GitHub.
 
             ` } // Empty .env file
-    ]},
-    cmd : 'body-parser cors dotenv express fs http-errors https jsonwebtoken mongoose multer'
+        ];
+        if (options && options.compress) {
+            filesArray.push({
+                folder: 'Middleware',
+                name: 'compressMiddleware.js',
+                content: `const multer = require('multer');
+const sharp = require('sharp');
+const archiver = require('archiver');
+const fs = require('fs');
+const path = require('path');
+const ffmpeg = require('fluent-ffmpeg');
+
+const IMAGE_SIZE_THRESHOLD = 5 * 1024 * 1024;   // 5MB
+const VIDEO_SIZE_THRESHOLD = 100 * 1024 * 1024; // 100MB
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'tiff'];
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadsDir = path.join(process.cwd(), 'uploads');
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+const upload = multer({ storage: storage });
+
+async function compressImage(filePath, ext) {
+    const compressedPath = filePath.replace('.' + ext, '-compressed.' + ext);
+    const outputFormat = ext === 'jpg' ? 'jpeg' : ext;
+
+    await sharp(filePath)
+    [outputFormat]({ quality: 80, effort: 6 })
+        .toFile(compressedPath);
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath);
+        console.log(\`Image compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressVideo(filePath, options = {}) {
+    const { crf = 28, preset = 'fast', resolution = null } = options;
+    const ext = path.extname(filePath);
+    const compressedPath = filePath.replace(ext, '-compressed.mp4');
+
+    await new Promise((resolve, reject) => {
+        let command = ffmpeg(filePath)
+            .videoCodec('libx264')
+            .audioCodec('aac')
+            .outputOptions([
+                '-crf ' + crf,
+                '-preset ' + preset,
+                '-movflags +faststart',
+            ])
+            .format('mp4');
+
+        if (resolution) {
+            command = command.size(resolution);
+        }
+
+        command
+            .on('end', resolve)
+            .on('error', reject)
+            .save(compressedPath);
+    });
+
+    const originalSize = fs.statSync(filePath).size;
+    const compressedSize = fs.statSync(compressedPath).size;
+
+    if (compressedSize < originalSize) {
+        fs.unlinkSync(filePath);
+        fs.renameSync(compressedPath, filePath.replace(ext, '.mp4'));
+        console.log(\`Video compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+    } else {
+        fs.unlinkSync(compressedPath);
+        console.log('Video compression did not reduce size, keeping original.');
+    }
+}
+
+async function compressFileZip(filePath) {
+    const zipPath = filePath + '.zip';
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    return new Promise((resolve, reject) => {
+        output.on('close', () => {
+            const originalSize = fs.statSync(filePath).size;
+            const compressedSize = fs.statSync(zipPath).size;
+
+            if (compressedSize < originalSize) {
+                fs.unlinkSync(filePath);
+                console.log(\`File compressed: \${(originalSize / 1024 / 1024).toFixed(2)}MB → \${(compressedSize / 1024 / 1024).toFixed(2)}MB\`);
+            } else {
+                fs.unlinkSync(zipPath);
+                console.log('Compression did not reduce size, keeping original.');
+            }
+            resolve();
+        });
+        archive.on('error', reject);
+        archive.pipe(output);
+        archive.file(filePath, { name: path.basename(filePath) });
+        archive.finalize();
+    });
+}
+
+async function compressFile(req, res, next) {
+    try {
+        const files = req.files
+            ? Object.values(req.files).flat()
+            : req.file
+                ? [req.file]
+                : [];
+
+        if (files.length === 0) return next();
+
+        await Promise.all(
+            files.map(async (file) => {
+                const ext = path.extname(file.path).replace('.', '').toLowerCase();
+                const isVideo = VIDEO_EXTENSIONS.includes(ext);
+                const threshold = isVideo ? VIDEO_SIZE_THRESHOLD : IMAGE_SIZE_THRESHOLD;
+
+                if (file.size <= threshold) return;
+
+                if (IMAGE_EXTENSIONS.includes(ext)) {
+                    await compressImage(file.path, ext);
+                } else if (isVideo) {
+                    await compressVideo(file.path, req.videoCompressOptions || {});
+                } else {
+                    await compressFileZip(file.path);
+                }
+            })
+        );
+
+        next();
+    } catch (err) {
+        console.error('Compression error:', err);
+        const filesToClean = req.files ? Object.values(req.files).flat() : req.file ? [req.file] : [];
+        for (const file of filesToClean) {
+            if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        }
+        next(err);
+    }
+}
+
+module.exports = { upload, compressFile };
+`
+            });
+        }
+        return filesArray;
+    },
+    cmd: 'body-parser cors dotenv express fs http-errors https jsonwebtoken mongoose multer'
 }
