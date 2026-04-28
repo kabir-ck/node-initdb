@@ -559,6 +559,7 @@ import { Codes, Messages } from "./Utils/httpCodesAndMessages.js";
 import fs from 'fs'; // Importing file system module for file operations
 import { healthRoutes } from "./Routes/health.Route.js";
 import { registerRoutes } from "./Routes/index.Route.js"; // Importing the function to register routes
+${options.encryption ? 'import { encryptionPlugin } from "./Middleware/encryptionPlugin.js";' : ''}
 
 // Database initialization
 import { connectDB } from "./config/dbConfig.js"; // Importing DB connection function
@@ -606,6 +607,7 @@ const app = new Elysia({ adapter: node() })
         }
         })
   
+  ${options.encryption ? '.use(encryptionPlugin)' : ''}
   registerRoutes(app);
 
   const startServer = async () => {
@@ -690,6 +692,7 @@ IS_HTTPS=false
 KEYPATH=
 CARTPATH=
 JWT_SECRET=
+${options.encryption ? 'ENCRYPTION_KEY=your-32-byte-secret-key-here-123456789012' : ''}
 ` }, // Empty .env file
       {
         folder: '', name: '.gitignore', content:
@@ -936,6 +939,51 @@ export const compressFile = async ({ body }) => {
 `
       });
     }
+
+    if (options && options.encryption) {
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'encryptionPlugin.js',
+        content: `import { Elysia } from 'elysia';
+import crypto from 'crypto';
+
+const ALGORITHM = 'aes-256-cbc';
+
+export const encryptionPlugin = new Elysia({ name: 'encryption' })
+
+  .onParse(async ({ request }) => {
+    try {
+      const text = await request.text();
+      const { iv, encrypted } = JSON.parse(text);
+      const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+
+      const decipher = crypto.createDecipheriv(ALGORITHM, key, Buffer.from(iv, 'hex'));
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+
+      return JSON.parse(decrypted);
+    } catch {
+      throw new Error('Decryption failed');
+    }
+  })
+
+  .mapResponse(({ response }) => {
+    const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+    const payload = JSON.stringify(response);
+    let encrypted = cipher.update(payload, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+
+    return new Response(
+      JSON.stringify({ iv: iv.toString('hex'), encrypted }),
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+  });
+`
+      });
+    }
+
     return filesArray;
   },
   cmd: '@elysiajs/cors @elysiajs/jwt @elysiajs/node dotenv elysia elysia-helmet elysia-rate-limit fs https mongoose jsonwebtoken sequelize mysql2'
