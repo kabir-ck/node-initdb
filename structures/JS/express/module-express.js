@@ -1,8 +1,9 @@
 module.exports = {
-    folders: ['Controllers', 'Routes', 'Models', 'Middleware'],
-    mfiles:(name, options) =>{
-        let files = [{folder: 'Models', name: `${name}.Model.js`, content:
-            `
+  folders: ['Controllers', 'Routes', 'Models', 'Middleware'],
+  mfiles: (name, options) => {
+    let files = [{
+      folder: 'Models', name: `${name}.Model.js`, content:
+        `
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -121,13 +122,13 @@ const ${name}Model = mongoose.model('${name}', ${name}Schema);
 
 // Export the model for use in other parts of the application
 module.exports = ${name}Model;`
-        },
-      
-        {
-          folder: 'Controllers',
-          name: `${name}.Controller.js`,
-          content:
-              `
+    },
+
+    {
+      folder: 'Controllers',
+      name: `${name}.Controller.js`,
+      content:
+        `
 // Importing HTTP status codes and messages from utilities
 const { Codes, Messages } = require("../Utils/httpCodesAndMessages");
 // Importing the response handler utility for managing API responses
@@ -216,11 +217,11 @@ module.exports = {
               ` },
 
 
-        {
-          folder: 'Routes',
-          name: `${name}.Route.js`,
-          content:
-              `
+    {
+      folder: 'Routes',
+      name: `${name}.Route.js`,
+      content:
+        `
 const express = require("express");
 // Creating a router instance from express to define route handlers
 const router = express.Router();
@@ -238,13 +239,13 @@ router.delete("/" ,${name}Controller.delete${name});
 // Exporting the router instance to be used in other parts of the application
 module.exports = router;
               ` }
-        ];
+    ];
 
-        if (options && options.compress) {
-            files.push({
-                folder: 'Middleware',
-                name: 'compressMiddleware.js',
-                content: `const multer = require('multer');
+    if (options && options.compress) {
+      files.push({
+        folder: 'Middleware',
+        name: 'compressMiddleware.js',
+        content: `const multer = require('multer');
 const sharp = require('sharp');
 const archiver = require('archiver');
 const fs = require('fs');
@@ -396,14 +397,15 @@ async function compressFile(req, res, next) {
     }
 }
 
-module.exports = { upload, compressFile };
+module.exports = {compressFile };
 `
-            });
-        }
-        return files;
-    },
-    sfiles:(name, options) =>{
-      let files = [{folder: 'Models', name: `${name}.Model.js`, content:`
+      });
+    }
+    return files;
+  },
+  sfiles: (name, options) => {
+    let files = [{
+      folder: 'Models', name: `${name}.Model.js`, content: `
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/dbConfig'); // Update the path as necessary
 
@@ -518,7 +520,7 @@ module.exports = ${name}Model;
     {
       folder: 'Controllers',
       name: `${name}.Controller.js`,
-      content:`
+      content: `
 // Importing HTTP status codes and messages from utilities
 const { Codes, Messages } = require("../Utils/httpCodesAndMessages");
 // Importing the response handler utility for managing API responses
@@ -607,7 +609,7 @@ module.exports = {
       folder: 'Routes',
       name: `${name}.Route.js`,
       content:
-          `
+        `
 const express = require("express");
 // Creating a router instance from express to define route handlers
 const router = express.Router();
@@ -625,13 +627,13 @@ router.delete("/" ,${name}Controller.delete${name});
 // Exporting the router instance to be used in other parts of the application
 module.exports = router;
           ` }
-        ];
+    ];
 
-        if (options && options.compress) {
-            files.push({
-                folder: 'Middleware',
-                name: 'compressMiddleware.js',
-                content: `const multer = require('multer');
+    if (options && options.compress) {
+      files.push({
+        folder: 'Middleware',
+        name: 'compressMiddleware.js',
+        content: `const multer = require('multer');
 const sharp = require('sharp');
 const archiver = require('archiver');
 const fs = require('fs');
@@ -785,9 +787,9 @@ async function compressFile(req, res, next) {
 
 module.exports = { upload, compressFile };
 `
-            });
-        }
-        return files;
+      });
     }
+    return files;
+  }
 
 }

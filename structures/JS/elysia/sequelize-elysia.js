@@ -1,11 +1,12 @@
 module.exports = {
-    folders: ['config', 'Controllers' , 'Routes', 'Models', 'uploads', 'Middleware' , 'Utils'],
-    files: (index, Projectname, options) => { let filesArray = [
-        {
-            folder: 'Controllers',
-            name: 'health.Controller.js',
-            content:
-                ` 
+  folders: ['config', 'Controllers', 'Routes', 'Models', 'uploads', 'Middleware', 'Utils'],
+  files: (index, Projectname, options) => {
+    let filesArray = [
+      {
+        folder: 'Controllers',
+        name: 'health.Controller.js',
+        content:
+          ` 
 import { Codes, Messages } from "../Utils/httpCodesAndMessages.js";
 import ResponseHandler from "../Utils/responseHandler.js";
 
@@ -25,11 +26,11 @@ export const healthController = {
   }
 }
                 ` },
-        {
-            folder: 'Routes',
-            name: 'health.Route.js',
-            content:
-                `
+      {
+        folder: 'Routes',
+        name: 'health.Route.js',
+        content:
+          `
 import { config } from "dotenv";
 
 config();
@@ -40,11 +41,11 @@ export const healthRoutes = (app) => {
         .get("/health", healthController.getHealth);
 };                             
                 ` },
-                {
-                  folder: 'Routes',
-                  name: 'index.Route.js',
-                  content:
-                      `
+      {
+        folder: 'Routes',
+        name: 'index.Route.js',
+        content:
+          `
 import { healthRoutes } from './health.Route.js';
 
 export const registerRoutes = (app) =>
@@ -52,10 +53,10 @@ export const registerRoutes = (app) =>
       .group("/api/v1/health", (app) => healthRoutes(app))
                    
             ` },
-                {
-                    folder: 'Middleware', name: 'fileUpload.js',
-                    content:
-                        `
+      {
+        folder: 'Middleware', name: 'fileUpload.js',
+        content:
+          `
 /**
  * @fileoverview This module sets up and exports a configured Multer instance 
  * for handling file uploads in a Node.js application. It includes:
@@ -99,11 +100,11 @@ if (!fs.existsSync(uploadDir)) {
 export default upload; // Export configured multer instance
                                                                                   
                 ` },
-        {
-            folder: 'Models',
-            name: 'example.Model.js',
-            content:
-                `
+      {
+        folder: 'Models',
+        name: 'example.Model.js',
+        content:
+          `
 import { DataTypes } from 'sequelize';
 import { sequelize }from '../config/dbConfig'; // Update the path as necessary
 
@@ -216,10 +217,10 @@ const ExampleModel = sequelize.define('ExampleModel', {
 export default ExampleModel;
 
         ` },
-        { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
-        {
-            folder: 'Utils', name: 'httpCodesAndMessages.js', content:
-                `
+      { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
+      {
+        folder: 'Utils', name: 'httpCodesAndMessages.js', content:
+          `
 // HTTP Status Codes
 // This object maps standard HTTP status codes to their numeric values.
 export const Codes = {
@@ -329,10 +330,10 @@ export const Messages = {
                    
 export default { Codes, Messages };        
                 `
-        },
-        {
-            folder : 'Utils', name : 'validations.js', content :
-            `
+      },
+      {
+        folder: 'Utils', name: 'validations.js', content:
+          `
 // Validation.js
 const emailRegex = /^[^s@]+@[^s@]+.[^s@]+$/;
 const phoneRegex = /^+?[1-9]d{1,14}$/; // E.164 international phone number format
@@ -402,9 +403,9 @@ module.exports = {
 };
                         
             `
-        },
-        {
-          folder : 'Middleware', name : 'jwtToken.js', content :
+      },
+      {
+        folder: 'Middleware', name: 'jwtToken.js', content:
           `'use strict'
 'use strict'
 import ResponseHandler from '../Utils/responseHandler.js';
@@ -481,9 +482,9 @@ export const authMiddleware = async ({ jwt, headers, set, store }) => {
   }   
           `
       },
-        {
-            folder: 'Utils', name: 'responseHandler.js', content:
-                `
+      {
+        folder: 'Utils', name: 'responseHandler.js', content:
+          `
 /**
  * This module provides a utility class for handling HTTP responses in a standardized way.
  * It includes methods for sending success and error responses with customizable status codes and messages.
@@ -543,9 +544,9 @@ class ResponseHandler {
 export default ResponseHandler;
                       
 ` },
-        {
-            folder: '', name: index, content:
-                `
+      {
+        folder: '', name: index, content:
+          `
 import { Elysia } from "elysia"; 
 import { node } from '@elysiajs/node'
 import { config } from "dotenv";
@@ -637,10 +638,10 @@ const app = new Elysia({ adapter: node() })
   // Call the startServer function
   startServer();                                                                       
                 ` },
-        {
-            folder: 'config', name: 'dbConfig.js',
-            content:
-                `             
+      {
+        folder: 'config', name: 'dbConfig.js',
+        content:
+          `             
 // Importing Sequelize constructor from the sequelize package.
 import { Sequelize } from 'sequelize';
 
@@ -665,8 +666,9 @@ export const connectDB = async () => {
 // Exporting the sequelize instance and connectDB function to be used in other parts of the application.
 export default  sequelize ;
 
-                ` },{ folder: 'config', name: 'initModels.js',
-                content:`
+                ` }, {
+        folder: 'config', name: 'initModels.js',
+        content: `
 
 const initModels = () => {
     // Associate models here if necessary
@@ -676,9 +678,9 @@ const initModels = () => {
 export default initModels ;
                               
                 `},
-        {
-            folder: '', name: '.env', content:
-                `
+      {
+        folder: '', name: '.env', content:
+          `
 PORT=3000
 DB_HOST=localhost
 DB_NAME=test
@@ -689,16 +691,16 @@ KEYPATH=
 CARTPATH=
 JWT_SECRET=
 ` }, // Empty .env file
-  {
-    folder: '', name: '.gitignore', content:
-        `node_modules
+      {
+        folder: '', name: '.gitignore', content:
+          `node_modules
 package-lock.json
 .env
-` 
-} ,
-{
-    folder: '', name: 'README.md', content:
-        `
+`
+      },
+      {
+        folder: '', name: 'README.md', content:
+          `
 # *${Projectname}*
 
 This project was generated using node-initdb, a CLI tool for initializing database configurations, web framework setups, and project structures in Node.js projects. *This setup requires you to choose one option from each category: a database, a web framework, a language, and a package manager.*
@@ -785,10 +787,10 @@ If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.co
         ` }
     ];
     if (options && options.compress) {
-        filesArray.push({
-            folder: 'Middleware',
-            name: 'compressMiddleware.js',
-            content: `import sharp from 'sharp';
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'compressMiddleware.js',
+        content: `import sharp from 'sharp';
 import archiver from 'archiver';
 import fs from 'fs';
 import path from 'path';
@@ -932,9 +934,9 @@ export const compressFile = async ({ body }) => {
     }
 };
 `
-        });
+      });
     }
     return filesArray;
-},
-cmd : '@elysiajs/cors @elysiajs/jwt @elysiajs/node dotenv elysia elysia-helmet elysia-rate-limit fs https mongoose jsonwebtoken sequelize mysql2'
+  },
+  cmd: '@elysiajs/cors @elysiajs/jwt @elysiajs/node dotenv elysia elysia-helmet elysia-rate-limit fs https mongoose jsonwebtoken sequelize mysql2'
 }    

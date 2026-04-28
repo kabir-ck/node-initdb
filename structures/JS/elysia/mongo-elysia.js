@@ -1073,4 +1073,5 @@ export const compressFile = async ({ body }) => {
     return filesArray;
   },
   cmd: '@elysiajs/cors @elysiajs/jwt @elysiajs/node dotenv elysia elysia-helmet elysia-rate-limit fs https mongoose jsonwebtoken'
+} cmd: '@elysiajs/cors @elysiajs/jwt @elysiajs/node dotenv elysia elysia-helmet elysia-rate-limit fs https mongoose jsonwebtoken'
 }

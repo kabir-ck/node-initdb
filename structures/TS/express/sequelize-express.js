@@ -1,11 +1,12 @@
 module.exports = {
-    folders: ['config', 'Controllers' , 'Routes', 'Models', 'uploads', 'Middleware' , 'Utils'],
-    files: (index, Projectname, options) => { let filesArray = [
-        {
-            folder: 'Controllers',
-            name: 'health.Controller.ts',
-            content:
-                `
+  folders: ['config', 'Controllers', 'Routes', 'Models', 'uploads', 'Middleware', 'Utils'],
+  files: (index, Projectname, options) => {
+    let filesArray = [
+      {
+        folder: 'Controllers',
+        name: 'health.Controller.ts',
+        content:
+          `
   // Importing HTTP status codes and messages from utilities
   import { Codes, Messages } from '../Utils/httpCodesAndMessages';
   // Importing the response handler utility for managing API responses
@@ -32,11 +33,11 @@ module.exports = {
     },
   }
                 ` },
-        {
-            folder: 'Routes',
-            name: 'health.Route.ts',
-            content:
-                `
+      {
+        folder: 'Routes',
+        name: 'health.Route.ts',
+        content:
+          `
 // Importing the express module to create router instances and handle the routing
 import express from 'express'
 // Creating a router instance from express to define route handlers
@@ -51,11 +52,11 @@ router.get("/" ,HealthController.Health);
 // Exporting the router instance to be used in other parts of the application
 export default router;                
                 ` },
-                {
-                  folder: 'Routes',
-                  name: 'index.Route.ts',
-                  content:
-                      `   
+      {
+        folder: 'Routes',
+        name: 'index.Route.ts',
+        content:
+          `   
 import express from "express";
 const apiV1Router = express.Router();
 
@@ -64,10 +65,10 @@ apiV1Router.use("/Health", RouterHealth); // Mounting Health router at '/Health'
 
 export default apiV1Router; // Exporting the API v1 router for use in other modules
             ` },
-                {
-                    folder: 'Middleware', name: 'fileUpload.ts',
-                    content:
-                        `
+      {
+        folder: 'Middleware', name: 'fileUpload.ts',
+        content:
+          `
 /**
  * @fileoverview This module sets up and exports a configured Multer instance 
  * for handling file uploads in a Node.js application. It includes:
@@ -132,11 +133,11 @@ const upload = multer({
 export default upload;
 
                 ` },
-        {
-            folder: 'Models',
-            name: 'example.Model.ts',
-            content:
-                `
+      {
+        folder: 'Models',
+        name: 'example.Model.ts',
+        content:
+          `
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/dbConfig"; // Ensure correct path
 // ✅ Define TypeScript Interface for Model Attributes
@@ -307,10 +308,10 @@ export default ExampleModel;
                 
                 
         ` },
-        { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
-        {
-            folder: 'Utils', name: 'httpCodesAndMessages.ts', content:
-                `
+      { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
+      {
+        folder: 'Utils', name: 'httpCodesAndMessages.ts', content:
+          `
 // HTTP Status Codes
 // This object maps standard HTTP status codes to their numeric values.
 export const Codes: Record<string, number> = {
@@ -423,10 +424,10 @@ const httpCodesAndMessages = { Codes, Messages };
 export default httpCodesAndMessages;
                          
                 `
-        },
-        {
-            folder : 'Utils', name : 'validations.ts', content :
-            `
+      },
+      {
+        folder: 'Utils', name: 'validations.ts', content:
+          `
 // Validation.ts
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 international phone number format
@@ -492,9 +493,9 @@ export function hasRequiredFields(
 }
             
             `
-        },
-        {
-          folder : 'Middleware', name : 'jwtToken.ts', content :
+      },
+      {
+        folder: 'Middleware', name: 'jwtToken.ts', content:
           `'use strict'
 // jwtHelper.ts
 import jwt from 'jsonwebtoken';
@@ -593,9 +594,9 @@ export default JWTHelper;
           
           `
       },
-        {
-            folder: 'Utils', name: 'responseHandler.ts', content:
-                `
+      {
+        folder: 'Utils', name: 'responseHandler.ts', content:
+          `
 /**
  * This module provides a utility class for handling HTTP responses in a standardized way.
  * It includes methods for sending success and error responses with customizable status codes and messages.
@@ -663,9 +664,9 @@ class ResponseHandler {
 
 export default ResponseHandler;         
 ` },
-        {
-            folder: '', name: index, content:
-                `
+      {
+        folder: '', name: index, content:
+          `
 // Importing necessary modules
 
 import express, { NextFunction, Response, Request } from "express";
@@ -681,8 +682,11 @@ const app = express();
 
 app.use(cors()); // Using CORS middleware in the app
 app.use(express.json()); // Middleware to parse JSON bodies
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+
+${options.encryption ? `import { encryptResponse, decryptRequest } from "./Middleware/encryptionMiddleware";
+app.use(decryptRequest);
+app.use(encryptResponse);` : ''}
+
 
 // Database initialization
 connectDB(); // Connecting to the database
@@ -742,10 +746,10 @@ if (process.env.IS_HTTPS == "true") {
 }
 
                 ` },
-        {
-            folder: 'config', name: 'dbConfig.ts',
-            content:
-                `
+      {
+        folder: 'config', name: 'dbConfig.ts',
+        content:
+          `
 import { Sequelize } from "sequelize";
 
 // Initialize Sequelize with MySQL connection using environment variables
@@ -775,8 +779,9 @@ const connectDB = async (): Promise<void> => {
 export { sequelize, connectDB };
 
                 
-                ` },{ folder: 'config', name: 'initModels.ts',
-                content:`
+                ` }, {
+        folder: 'config', name: 'initModels.ts',
+        content: `
 const initModels = (): void => {
     // Associate models here if necessary
     // e.g., User.hasMany(Posts);
@@ -784,9 +789,9 @@ const initModels = (): void => {
 
 export { initModels };
                 `},
-        {
-            folder: '', name: '.env.example', content:
-                `PORT=3000
+      {
+        folder: '', name: '.env.example', content:
+          `PORT=3000
 DB_HOST=localhost
 DB_NAME=test
 DB_USER=
@@ -794,10 +799,12 @@ DB_PASS=
 IS_HTTPS=false
 KEYPATH=
 CARTPATH=
-JWT_SECRET=` }, // Empty .env file
-{
-    folder: '', name: 'tsconfig.json', content:
-        `
+JWT_SECRET=
+ENCRYPTION_ALGORITHM=aes-256-cbc
+ENCRYPTION_KEY=vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn` }, // Empty .env file
+      {
+        folder: '', name: 'tsconfig.json', content:
+          `
 {
 "compilerOptions": {
 "module": "commonjs",
@@ -815,19 +822,19 @@ JWT_SECRET=` }, // Empty .env file
 "include": ["*"]
 }
 
-` 
-} ,
-  {
-    folder: '', name: '.gitignore', content:
-        `node_modules
+`
+      },
+      {
+        folder: '', name: '.gitignore', content:
+          `node_modules
 dist
 package-lock.json
 .env.example
-` 
-} ,
-{
-    folder: '', name: 'README.md', content:
-        `
+`
+      },
+      {
+        folder: '', name: 'README.md', content:
+          `
 # *${Projectname}*
 
 This project was generated using node-initdb, a CLI tool for initializing database configurations, web framework setups, and project structures in Node.js projects. *This setup requires you to choose one option from each category: a database, a web framework, a language, and a package manager.*
@@ -914,11 +921,50 @@ If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.co
 
         ` }
     ];
-    if (options && options.compress) {
+    if (options && options.encryption) {
         filesArray.push({
             folder: 'Middleware',
-            name: 'compressMiddleware.ts',
-            content: `import multer from 'multer';
+            name: 'encryptionMiddleware.ts',
+            content: `import crypto from 'crypto';
+import { Request, Response, NextFunction } from 'express';
+
+const ALGORITHM = process.env.ENCRYPTION_ALGORITHM || 'aes-256-cbc';
+const SECRET_KEY = process.env.ENCRYPTION_KEY || 'vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn'; // 32 characters
+
+export const encryptResponse = (req: Request, res: Response, next: NextFunction) => {
+    const originalJson = res.json.bind(res);
+    res.json = (data: any) => {
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(SECRET_KEY), iv);
+        let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        return originalJson({ iv: iv.toString('hex'), encrypted });
+    };
+    next();
+};
+
+export const decryptRequest = (req: Request, res: Response, next: NextFunction) => {
+    if (req.body && req.body.encrypted && req.body.iv) {
+        try {
+            const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(SECRET_KEY), Buffer.from(req.body.iv, 'hex'));
+            let decrypted = decipher.update(req.body.encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+            req.body = JSON.parse(decrypted);
+        } catch (error) {
+            console.error('Decryption failed:', error);
+            return res.status(400).json({ error: 'Invalid encrypted data' });
+        }
+    }
+    next();
+};
+`
+        });
+    }
+    if (options && options.compress) {
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'compressMiddleware.ts',
+        content: `import multer from 'multer';
 import sharp from 'sharp';
 import archiver from 'archiver';
 import fs from 'fs';
@@ -1072,9 +1118,9 @@ export const compressFile = async (req: Request | any, res: Response, next: Next
     }
 };
 `
-        });
+      });
     }
     return filesArray;
-},
-cmd : '@types/bcryptjs @types/config @types/cors body-parser cors express http-errors https jsonwebtoken sequelize @types/sequelize mysql2 multer @types/express @types/gravatar @types/jsonwebtoken @types/multer @types/http-errors'
+  },
+  cmd: '@types/bcryptjs @types/config @types/cors body-parser cors express http-errors https jsonwebtoken sequelize @types/sequelize mysql2 multer @types/express @types/gravatar @types/jsonwebtoken @types/multer @types/http-errors'
 }    

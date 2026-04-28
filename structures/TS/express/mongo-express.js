@@ -592,8 +592,11 @@ const app = express();
 
 app.use(cors()); // Using CORS middleware in the app
 app.use(express.json()); // Middleware to parse JSON bodies
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+
+${options.encryption ? `import { encryptResponse, decryptRequest } from "./Middleware/encryptionMiddleware";
+app.use(decryptRequest);
+app.use(encryptResponse);` : ''}
+
 
 const apiV1Router = express.Router(); // Creating a new router for API version 1
 
@@ -774,7 +777,9 @@ DB_PASS=
 IS_HTTPS=false
 KEYPATH=
 CARTPATH=
-JWT_SECRET=` },
+JWT_SECRET=
+ENCRYPTION_ALGORITHM=aes-256-cbc
+ENCRYPTION_KEY=vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn` },
       {
         folder: '', name: 'tsconfig.json', content:
           `
@@ -893,6 +898,45 @@ For more information, visit:
 If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.com or open an issue on GitHub.
             ` } // Empty .env file
     ];
+    if (options && options.encryption) {
+        filesArray.push({
+            folder: 'Middleware',
+            name: 'encryptionMiddleware.ts',
+            content: `import crypto from 'crypto';
+import { Request, Response, NextFunction } from 'express';
+
+const ALGORITHM = process.env.ENCRYPTION_ALGORITHM || 'aes-256-cbc';
+const SECRET_KEY = process.env.ENCRYPTION_KEY || 'vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn'; // 32 characters
+
+export const encryptResponse = (req: Request, res: Response, next: NextFunction) => {
+    const originalJson = res.json.bind(res);
+    res.json = (data: any) => {
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(SECRET_KEY), iv);
+        let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        return originalJson({ iv: iv.toString('hex'), encrypted });
+    };
+    next();
+};
+
+export const decryptRequest = (req: Request, res: Response, next: NextFunction) => {
+    if (req.body && req.body.encrypted && req.body.iv) {
+        try {
+            const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(SECRET_KEY), Buffer.from(req.body.iv, 'hex'));
+            let decrypted = decipher.update(req.body.encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+            req.body = JSON.parse(decrypted);
+        } catch (error) {
+            console.error('Decryption failed:', error);
+            return res.status(400).json({ error: 'Invalid encrypted data' });
+        }
+    }
+    next();
+};
+`
+        });
+    }
     if (options && options.compress) {
       filesArray.push({
         folder: 'Middleware',

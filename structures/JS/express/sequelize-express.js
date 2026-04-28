@@ -1,11 +1,12 @@
 module.exports = {
-    folders: ['config','Controllers', 'Routes', 'Models', 'uploads', 'Middleware' , 'Utils'],
-    files: (index, Projectname, options) => { let filesArray = [
-        {
-            folder: 'Controllers',
-            name: 'health.Controller.js',
-            content:
-                `
+    folders: ['config', 'Controllers', 'Routes', 'Models', 'uploads', 'Middleware', 'Utils'],
+    files: (index, Projectname, options) => {
+        let filesArray = [
+            {
+                folder: 'Controllers',
+                name: 'health.Controller.js',
+                content:
+                    `
   // Importing HTTP status codes and messages from utilities
   const { Codes, Messages } = require("../Utils/httpCodesAndMessages");
   // Importing the response handler utility for managing API responses
@@ -26,11 +27,11 @@ module.exports = {
       }
   }
                 ` },
-        {
-            folder: 'Routes',
-            name: 'health.Route.js',
-            content:
-                `
+            {
+                folder: 'Routes',
+                name: 'health.Route.js',
+                content:
+                    `
 // Importing the express module to create router instances and handle the routing
 const express = require("express");
 // Creating a router instance from express to define route handlers
@@ -45,11 +46,11 @@ router.get("/" ,HealthController.Health);
 // Exporting the router instance to be used in other parts of the application
 module.exports = router;
                 ` },
-                {
-                    folder: 'Routes',
-                    name: 'index.Route.js',
-                    content:
-                        `
+            {
+                folder: 'Routes',
+                name: 'index.Route.js',
+                content:
+                    `
 const express = require("express");
 const apiV1Router = express.Router(); // Creating a new router for API version 1
 
@@ -59,10 +60,10 @@ apiV1Router.use("/Health", RoutesHealth);
 
 module.exports = apiV1Router;         
               ` },
-                {
-                    folder: 'Middleware', name: 'fileUpload.js',
-                    content:
-                        `
+            {
+                folder: 'Middleware', name: 'fileUpload.js',
+                content:
+                    `
 /**
  * @fileoverview This module sets up and exports a configured Multer instance 
  * for handling file uploads in a Node.js application. It includes:
@@ -103,11 +104,11 @@ module.exports = upload; // Export configured multer instance
 
 
                 ` },
-        {
-            folder: 'Models',
-            name: 'Example.Model.js',
-            content:
-                `
+            {
+                folder: 'Models',
+                name: 'Example.Model.js',
+                content:
+                    `
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/dbConfig'); // Update the path as necessary
 
@@ -221,10 +222,10 @@ module.exports = ExampleModel;
                 
                 
         ` },
-        { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
-        {
-            folder: 'Utils', name: 'httpCodesAndMessages.js', content:
-                `
+            { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
+            {
+                folder: 'Utils', name: 'httpCodesAndMessages.js', content:
+                    `
 // HTTP Status Codes
 // This object maps standard HTTP status codes to their numeric values.
 const Codes = {
@@ -330,10 +331,10 @@ const Messages = {
 
 module.exports = { Codes, Messages };                             
                 `
-        },
-        {
-            folder : 'Utils', name : 'validations.js', content :
-            `
+            },
+            {
+                folder: 'Utils', name: 'validations.js', content:
+                    `
 // Validation.js
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 international phone number format
@@ -403,10 +404,10 @@ module.exports = {
 };
             
             `
-        },
-        {
-            folder : 'Middleware', name : 'jwtToken.js', content :
-            `'use strict'
+            },
+            {
+                folder: 'Middleware', name: 'jwtToken.js', content:
+                    `'use strict'
 // jwtHelper.js
 const jwt = require('jsonwebtoken');
 const ResponseHandler = require('../Utils/responseHandler');
@@ -475,10 +476,10 @@ class JWTHelper {
 module.exports = JWTHelper;
             
             `
-        },
-        {
-            folder: 'Utils', name: 'responseHandler.js', content:
-                `
+            },
+            {
+                folder: 'Utils', name: 'responseHandler.js', content:
+                    `
 /**
  * This module provides a utility class for handling HTTP responses in a standardized way.
  * It includes methods for sending success and error responses with customizable status codes and messages.
@@ -535,9 +536,9 @@ class ResponseHandler {
 
 module.exports = ResponseHandler;   
 ` },
-        {
-            folder: '', name: index, content:
-                `
+            {
+                folder: '', name: index, content:
+                    `
 // Importing necessary modules
 const express = require("express"); // Express framework for handling server-side logic
 const createError = require("http-errors"); // Utility to create HTTP errors
@@ -549,8 +550,10 @@ const app = express(); // Creating an instance of express
 const fs = require('fs'); // File system module to handle file operations
 app.use(cors()); // Applying CORS middleware to allow cross-origin requests
 app.use(express.json()); // Middleware to parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded bodies
-app.use(bodyParser.json()); // Middleware to parse JSON bodies (redundant with express.json())
+
+${options.encryption ? `const { encryptResponse, decryptRequest } = require("./Middleware/encryptionMiddleware");
+app.use(decryptRequest);
+app.use(encryptResponse);` : ''}
 
 const apiV1Router = require("./Routes/index.Route"); // Creating a new router for API version 1
 app.use("/api/v1" , apiV1Router); // Mounting the API v1 router at '/api/v1'
@@ -608,10 +611,10 @@ if (process.env.IS_HTTPS == "true") {
     });
 }
                 ` },
-        {
-            folder: 'config', name: 'dbConfig.js',
-            content:
-                `
+            {
+                folder: 'config', name: 'dbConfig.js',
+                content:
+                    `
 // Importing Sequelize constructor from the sequelize package.
 const { Sequelize } = require('sequelize');
 
@@ -636,8 +639,9 @@ const connectDB = async () => {
 // Exporting the sequelize instance and connectDB function to be used in other parts of the application.
 module.exports = { sequelize, connectDB };
                 
-                ` },{ folder: 'config', name: 'initModels.js',
-                content:`
+                ` }, {
+                folder: 'config', name: 'initModels.js',
+                content: `
 const initModels = () => {
     // Associate models here if necessary
     // e.g., User.hasMany(Posts);
@@ -645,9 +649,9 @@ const initModels = () => {
 
 module.exports = { initModels };
                 `},
-        {
-            folder: '', name: '.env', content:
-                `PORT=3000
+            {
+                folder: '', name: '.env', content:
+                    `PORT=3000
 DB_HOST=localhost
 DB_NAME=test
 DB_USER=
@@ -655,17 +659,19 @@ DB_PASS=
 IS_HTTPS=false
 KEYPATH=
 CARTPATH=
-JWT_SECRET=` }, // Empty .env file
-{
-    folder: '', name: '.gitignore', content:
-        `node_modules
+JWT_SECRET=
+ENCRYPTION_ALGORITHM=aes-256-cbc
+ENCRYPTION_KEY=vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn` }, // Empty .env file
+            {
+                folder: '', name: '.gitignore', content:
+                    `node_modules
   package-lock.json
   .env
-  ` 
-  } ,
-{
-    folder: '', name: 'README.md', content:
-        `
+  `
+            },
+            {
+                folder: '', name: 'README.md', content:
+                    `
 # *${Projectname}*
 
 This project was generated using node-initdb, a CLI tool for initializing database configurations, web framework setups, and project structures in Node.js projects. *This setup requires you to choose one option from each category: a database, a web framework, a language, and a package manager.*
@@ -751,12 +757,52 @@ For more information, visit:
 If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.com or open an issue on GitHub.
 
         ` }
-    ];
-    if (options && options.compress) {
-        filesArray.push({
-            folder: 'Middleware',
-            name: 'compressMiddleware.js',
-            content: `const multer = require('multer');
+        ];
+        if (options && options.encryption) {
+            filesArray.push({
+                folder: 'Middleware',
+                name: 'encryptionMiddleware.js',
+                content: `const crypto = require('crypto');
+
+const ALGORITHM = process.env.ENCRYPTION_ALGORITHM || 'aes-256-cbc';
+const SECRET_KEY = process.env.ENCRYPTION_KEY || 'vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn'; // 32 characters
+
+function encryptResponse(req, res, next) {
+    const originalJson = res.json.bind(res);
+    res.json = (data) => {
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(SECRET_KEY), iv);
+        let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        originalJson({ iv: iv.toString('hex'), encrypted });
+    };
+    next();
+}
+
+function decryptRequest(req, res, next) {
+    if (req.body && req.body.encrypted && req.body.iv) {
+        try {
+            const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(SECRET_KEY), Buffer.from(req.body.iv, 'hex'));
+            let decrypted = decipher.update(req.body.encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+            req.body = JSON.parse(decrypted);
+        } catch (error) {
+            console.error('Decryption failed:', error);
+            return res.status(400).json({ error: 'Invalid encrypted data' });
+        }
+    }
+    next();
+}
+
+module.exports = { encryptResponse, decryptRequest };
+`
+            });
+        }
+        if (options && options.compress) {
+            filesArray.push({
+                folder: 'Middleware',
+                name: 'compressMiddleware.js',
+                content: `const multer = require('multer');
 const sharp = require('sharp');
 const archiver = require('archiver');
 const fs = require('fs');
@@ -910,9 +956,9 @@ async function compressFile(req, res, next) {
 
 module.exports = { upload, compressFile };
 `
-        });
-    }
-    return filesArray;
-},
-cmd : 'body-parser cors dotenv express fs http-errors https jsonwebtoken sequelize mysql2 multer'
+            });
+        }
+        return filesArray;
+    },
+    cmd: 'body-parser cors dotenv express fs http-errors https jsonwebtoken sequelize mysql2 multer'
 }

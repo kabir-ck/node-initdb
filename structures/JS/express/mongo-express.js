@@ -7,23 +7,13 @@ module.exports = {
                 name: 'health.Controller.js',
                 content:
                     `
-  // Importing HTTP status codes and messages from utilities
   const { Codes, Messages } = require("../Utils/httpCodesAndMessages");
-  // Importing the response handler utility for managing API responses
   const ResponseHandler = require("../Utils/responseHandler");
   
   module.exports = {
-      // Health check endpoint
+      // Health check
       Health: (req, res, next) => {
-          try {
-              // Attempt to send a success response indicating the health status
               ResponseHandler.sendSuccess(res, "health Status", Codes.OK, Messages.OK);
-              return;
-          } catch (error) {
-              // Handle any errors that occur during the process by sending an error response
-              ResponseHandler.sendError(res, error, Codes.INTERNAL_SERVER_ERROR, Messages.INTERNAL_SERVER_ERROR);
-              return;
-         }
       }
   }
                 ` },
@@ -32,12 +22,8 @@ module.exports = {
                 name: 'health.Route.js',
                 content:
                     `
-// Importing the express module to create router instances and handle the routing
 const express = require("express");
-// Creating a router instance from express to define route handlers
 const router = express.Router();
-
-// Importing the HealthController from the Controllers directory
 const HealthController = require("../Controllers/health.Controller")
 
 // Defining a GET route on the root path which uses the Health method from HealthController to handle requests
@@ -505,19 +491,23 @@ module.exports = ResponseHandler;
             {
                 folder: '', name: index, content:
                     `
+const path = require('node:path'); // Importing path module for handling file paths
+const fs = require('node:fs'); // Importing file system module for file operations
 const express = require("express"); // Importing express module for server operations
 const createError = require("http-errors"); // Importing module to create HTTP errors
 const dotenv = require("dotenv") // Importing dotenv to load environment variables
 const cors = require('cors'); // Importing CORS middleware to enable cross-origin requests
-const bodyParser = require("body-parser"); // Importing body-parser middleware to parse request bodies
 const app = express(); // Creating an instance of express
-const path = require('path'); // Importing path module for handling file paths
-const fs = require('fs'); // Importing file system module for file operations
+
 
 app.use(cors()); // Using CORS middleware in the app
 app.use(express.json()); // Middleware to parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded bodies
-app.use(bodyParser.json()); // Middleware to parse JSON bodies using body-parser
+
+${options.encryption ? `const { encryptResponse, decryptRequest } = require("./Middleware/encryptionMiddleware");
+app.use(decryptRequest);
+app.use(encryptResponse);` : ''}
+
+
 
 const apiV1Router = require("./Routes/index.Route"); // Creating a new router for API version 1
 app.use("/api/v1" , apiV1Router); // Mounting API v1 router at '/api/v1'
@@ -554,21 +544,17 @@ apiV1Router.use((err, req, res, next) => {
     });
 });
 
-const http = require("https"); // Importing HTTPS module
 const PORT = process.env.PORT || 8096; // Setting port from environment variable or default to 8096
-// Check if HTTPS is enabled via environment variable
 if (process.env.IS_HTTPS == "true") {
     const privateKey = fs.readFileSync(process.env.KEYPATH, 'utf8'); // Reading private key for HTTPS
     const certificate = fs.readFileSync(process.env.CARTPATH, 'utf8'); // Reading certificate for HTTPS
     const credentials = { key: privateKey, cert: certificate }; // Creating credentials object
     
-    // Creating and starting HTTPS server
-    let server = http.createServer(credentials, app);
+    const server = require("https").createServer(credentials, app);
     server.listen(PORT, () => {
         console.log('HTTPS Server started on port :' ,PORT);
     });
 } else {
-    // Starting HTTP server if HTTPS is not enabled
     app.listen(PORT, () => {
         console.log('HTTP Server started on port :' ,PORT);
     });
@@ -676,7 +662,9 @@ IS_HTTPS=false
 KEYPATH=
 CARTPATH=
 JWT_SECRET=
-NODE_ENV=development ` },
+NODE_ENV=development
+ENCRYPTION_ALGORITHM=aes-256-cbc
+ENCRYPTION_KEY=vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn ` },
             {
                 folder: '', name: '.env.production', content:
                     `PORT=3000
@@ -688,7 +676,9 @@ IS_HTTPS=false
 KEYPATH=
 CARTPATH=
 JWT_SECRET=
-NODE_ENV=production ` },
+NODE_ENV=production
+ENCRYPTION_ALGORITHM=aes-256-cbc
+ENCRYPTION_KEY=vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn ` },
             {
                 folder: '', name: '.gitignore', content:
                     `node_modules
@@ -785,6 +775,46 @@ If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.co
 
             ` } // Empty .env file
         ];
+        if (options && options.encryption) {
+            filesArray.push({
+                folder: 'Middleware',
+                name: 'encryptionMiddleware.js',
+                content: `const crypto = require('crypto');
+
+const ALGORITHM = process.env.ENCRYPTION_ALGORITHM || 'aes-256-cbc';
+const SECRET_KEY = process.env.ENCRYPTION_KEY || 'vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn'; // 32 characters
+
+function encryptResponse(req, res, next) {
+    const originalJson = res.json.bind(res);
+    res.json = (data) => {
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(SECRET_KEY), iv);
+        let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        originalJson({ iv: iv.toString('hex'), encrypted });
+    };
+    next();
+}
+
+function decryptRequest(req, res, next) {
+    if (req.body && req.body.encrypted && req.body.iv) {
+        try {
+            const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(SECRET_KEY), Buffer.from(req.body.iv, 'hex'));
+            let decrypted = decipher.update(req.body.encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+            req.body = JSON.parse(decrypted);
+        } catch (error) {
+            console.error('Decryption failed:', error);
+            return res.status(400).json({ error: 'Invalid encrypted data' });
+        }
+    }
+    next();
+}
+
+module.exports = { encryptResponse, decryptRequest };
+`
+            });
+        }
         if (options && options.compress) {
             filesArray.push({
                 folder: 'Middleware',

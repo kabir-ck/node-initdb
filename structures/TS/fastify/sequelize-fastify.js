@@ -1,11 +1,12 @@
 module.exports = {
-    folders: ['config','Controllers', 'Routes', 'Models', 'uploads', 'Middleware' , 'Utils'],
-    files: (index, Projectname, options) => { let filesArray = [
-        {
-            folder: 'Controllers',
-            name: 'health.Controller.ts',
-            content:
-                `
+  folders: ['config', 'Controllers', 'Routes', 'Models', 'uploads', 'Middleware', 'Utils'],
+  files: (index, Projectname, options) => {
+    let filesArray = [
+      {
+        folder: 'Controllers',
+        name: 'health.Controller.ts',
+        content:
+          `
 import { FastifyReply, FastifyRequest } from "fastify/fastify";
 import { Codes, Messages } from "../Utils/httpCodesAndMessages";
 import ResponseHandler from "../Utils/responseHandler";
@@ -34,11 +35,11 @@ export const HealthController = {
 };                       
                               
                 ` },
-        {
-            folder: 'Routes',
-            name: 'health.Route.ts',
-            content:
-                `
+      {
+        folder: 'Routes',
+        name: 'health.Route.ts',
+        content:
+          `
 /**
  * This module exports a function that defines routes for health checks.
  * It imports the HealthController and sets up a GET route for the health check endpoint.
@@ -62,11 +63,11 @@ async function healthRoutes(fastify: FastifyInstance) {
 export default healthRoutes;                
             
 ` },
-{
-  folder: 'Routes',
-  name: 'index.Route.ts',
-  content:
-      `
+      {
+        folder: 'Routes',
+        name: 'index.Route.ts',
+        content:
+          `
 import { FastifyInstance } from 'fastify';
 import RoutesHealth from './health.Route';
 
@@ -76,10 +77,10 @@ export default async function registerRoutes(server: FastifyInstance) {
 
 }  
 ` },
-                {
-                    folder: 'Middleware', name: 'fileUpload.ts',
-                    content:
-                        `
+      {
+        folder: 'Middleware', name: 'fileUpload.ts',
+        content:
+          `
 /**
  * This module exports a middleware function for handling file uploads.
  * It uses the 'fs' and 'path' modules to write the uploaded file to a directory.
@@ -139,11 +140,11 @@ const uploadMiddleware = async (req: FastifyRequest, reply: FastifyReply) => {
 export default uploadMiddleware;           
 
                 ` },
-        {
-            folder: 'Models',
-            name: 'example.Model.ts',
-            content:
-                `
+      {
+        folder: 'Models',
+        name: 'example.Model.ts',
+        content:
+          `
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/dbConfig";
 
@@ -312,10 +313,10 @@ ExampleModel.init(
 export default ExampleModel;
                 
         ` },
-        { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
-        {
-            folder: 'Utils', name: 'httpCodesAndMessages.ts', content:
-                `
+      { folder: 'uploads', name: 'dummy', content: '// Dummy file' },
+      {
+        folder: 'Utils', name: 'httpCodesAndMessages.ts', content:
+          `
 // HTTP Status Codes
 // This object maps standard HTTP status codes to their numeric values.
 export const Codes: Record<string, number> = {
@@ -427,10 +428,10 @@ const httpCodesAndMessages = { Codes, Messages };
 
 export default httpCodesAndMessages;                          
                 `
-        },
-        {
-            folder : 'Utils', name : 'validations.ts', content :
-            `
+      },
+      {
+        folder: 'Utils', name: 'validations.ts', content:
+          `
 // Validation.js
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 international phone number format
@@ -496,10 +497,10 @@ export function hasRequiredFields(
 }
 
             `
-        },
-        {
-            folder : 'Middleware', name : 'jwtToken.ts', content :
-            `'use strict'
+      },
+      {
+        folder: 'Middleware', name: 'jwtToken.ts', content:
+          `'use strict'
 // jwtHelper.ts
 import jwt from 'jsonwebtoken';
 import ResponseHandler from '../Utils/responseHandler';
@@ -595,10 +596,10 @@ class JWTHelper {
 export default JWTHelper;
 
             `
-        },
-        {
-            folder: 'Utils', name: 'responseHandler.ts', content:
-                `
+      },
+      {
+        folder: 'Utils', name: 'responseHandler.ts', content:
+          `
 /**
  * This module provides a utility class for handling HTTP responses in a standardized way.
  * It includes methods for sending success and error responses with customizable status codes and messages.
@@ -665,9 +666,9 @@ class ResponseHandler {
 
 export default ResponseHandler;
 ` },
-        {
-            folder: '', name: index, content:
-                `
+      {
+        folder: '', name: index, content:
+          `
 
 /**
  * Initializes the Fastify server with logging enabled.
@@ -713,6 +714,9 @@ const server: FastifyInstance = fastify({
 server.register(cors);
 server.register(formbody);
 server.register(multipart);
+
+${options.encryption ? `import encryptionPlugin from "./Middleware/encryptionMiddleware";
+server.register(encryptionPlugin, { secretKey: process.env.ENCRYPTION_KEY as string, prefix: '/secure' });` : ''}
 
 // Register JWT plugin with secret from environment variables
 server.register(fastifyJwt, {
@@ -765,10 +769,10 @@ const startServer = async (): Promise<void> => {
 startServer();                
 
                 ` },
-        {
-            folder: 'config', name: 'dbConfig.ts',
-            content:
-                `
+      {
+        folder: 'config', name: 'dbConfig.ts',
+        content:
+          `
 // Importing Sequelize constructor from the sequelize package.
 import { Sequelize } from "sequelize";
 
@@ -798,8 +802,9 @@ const connectDB = async (): Promise<void> => {
 // Exporting the sequelize instance and connectDB function
 export { sequelize, connectDB };
                 
-                ` },{ folder: 'config', name: 'initModels.ts',
-                content:`
+                ` }, {
+        folder: 'config', name: 'initModels.ts',
+        content: `
 const initModels = (): void => {
   // Associate models here if necessary
   // e.g., User has many Posts
@@ -810,9 +815,9 @@ const initModels = (): void => {
 export { initModels };
 
                 `},
-        {
-            folder: '', name: '.env.example', content:
-                `PORT=3000
+      {
+        folder: '', name: '.env.example', content:
+          `PORT=3000
 DB_HOST=localhost
 DB_NAME=test
 DB_USER=
@@ -822,9 +827,9 @@ KEYPATH=
 CARTPATH=
 JWT_SECRET=` }, // Empty .env file
 
-{
-  folder: '', name: 'tsconfig.json', content:
-      `
+      {
+        folder: '', name: 'tsconfig.json', content:
+          `
 {
 "compilerOptions": {
 "module": "commonjs",
@@ -842,19 +847,19 @@ JWT_SECRET=` }, // Empty .env file
 "include": ["*"]
 }
 
-` 
-} ,
-{
-  folder: '', name: '.gitignore', content:
-      `node_modules
+`
+      },
+      {
+        folder: '', name: '.gitignore', content:
+          `node_modules
 dist
 package-lock.json
 env.example
-` 
-},
-{
-    folder: '', name: 'README.md', content:
-        `
+`
+      },
+      {
+        folder: '', name: 'README.md', content:
+          `
 # *${Projectname}*
 
 This project was generated using node-initdb, a CLI tool for initializing database configurations, web framework setups, and project structures in Node.js projects. *This setup requires you to choose one option from each category: a database, a web framework, a language, and a package manager.*
@@ -940,11 +945,54 @@ For more information, visit:
 If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.com or open an issue on GitHub.
         ` }
     ];
+
+    if (options && options.encryption) {
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'encryptionMiddleware.ts',
+        content: `import fp from 'fastify-plugin';
+import crypto from 'crypto';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+interface EncryptionOptions {
+  secretKey: string;
+}
+
+const encryptionPlugin = fp(async (fastify: FastifyInstance, options: EncryptionOptions) => {
+  const key = Buffer.from(options.secretKey, 'hex');
+
+  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!(request.body as any)?.encrypted) return; // skip non-encrypted routes
+    try {
+      const { iv, encrypted } = request.body as any;
+      const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(iv, 'hex'));
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      request.body = JSON.parse(decrypted);
+    } catch {
+      reply.code(400).send({ error: 'Decryption failed' });
+    }
+  });
+
+  fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, payload: any) => {
+    if (typeof payload !== 'string' && !Buffer.isBuffer(payload)) return payload;
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    let encrypted = cipher.update(payload, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return JSON.stringify({ iv: iv.toString('hex'), encrypted });
+  });
+});
+
+export default encryptionPlugin;`
+      });
+    }
+
     if (options && options.compress) {
-        filesArray.push({
-            folder: 'Middleware',
-            name: 'compressMiddleware.ts',
-            content: `import util from 'util';
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'compressMiddleware.ts',
+        content: `import util from 'util';
 import path from 'path';
 import fs from 'fs';
 import { pipeline } from 'stream';
@@ -1102,9 +1150,9 @@ export async function compressFile(req: any, reply: FastifyReply) {
     }
 }
 `
-        });
+      });
     }
     return filesArray;
-},
-cmd : '@fastify/formbody @fastify/cors @fastify/multipart @fastify/static bcryptjs config cors multer @types/cors @types/jsonwebtoken @types/multer @types/config @types/bcryptjs jsonwebtoken http-errors @types/sequelize fastify fastify-jwt @fastify/jwt sequelize mysql2'
+  },
+  cmd: '@fastify/formbody @fastify/cors @fastify/multipart @fastify/static bcryptjs config cors multer @types/cors @types/jsonwebtoken @types/multer @types/config @types/bcryptjs jsonwebtoken http-errors @types/sequelize fastify fastify-jwt @fastify/jwt sequelize mysql2'
 }

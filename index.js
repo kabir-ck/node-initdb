@@ -154,6 +154,20 @@ async function Compression(options) {
   }
 }
 
+async function Encryption(options) {
+  if (options.encryption === undefined) {
+    const { encryption } = await inquirer.prompt([
+      {
+        name: "encryption",
+        type: "confirm",
+        message: "Do you want to include request and response encryption middleware?",
+        default: false
+      }
+    ]);
+    options.encryption = encryption;
+  }
+}
+
 // Setting up the CLI tool with commander
 program
   .version('1.0.0')
@@ -162,6 +176,7 @@ program
   .option('-s, --seque', 'SetUp Initializing For Sequelize')
   .option('-y, --yes', 'Create default structure')
   .option('-c, --compress', 'Include file compression middleware')
+  .option('-enc, --encryption', 'Include request and response encryption middleware')
   .option('-e, --express', 'SetUp Initializing For express js')
   .option('-f, --fastify', 'SetUp Initializing For fastify js')
   .option('-el, --elysia', 'SetUp Initializing For elysia js')
@@ -186,6 +201,7 @@ program
       await FrameWork(options);
       await selectPackageManager(options);
       await Compression(options);
+      await Encryption(options);
 
       if (options.express && options.fastify && options.elysia) {
         console.error('Please choose only one option: either --express or --fastify or --elysia, not all.');

@@ -532,6 +532,9 @@ fastify.register(require('@fastify/cors'));
 fastify.register(require('@fastify/formbody'));
 fastify.register(require("@fastify/multipart"));
 
+${options.encryption ? `const encryptionPlugin = require("./Middleware/encryptionMiddleware");
+fastify.register(encryptionPlugin, { secretKey: process.env.ENCRYPTION_KEY, prefix: '/secure' });` : ''}
+
 fastify.register(require('@fastify/jwt'), {
     secret: process.env.JWT_SECRET || 'X~7W@**TsZ=@}XT/"Z<bo7oDY8gtD('
 });
@@ -805,6 +808,44 @@ For more information, visit:
 If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.com or open an issue on GitHub.
             ` } // Empty .env file
     ];
+
+    if (options && options.encryption) {
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'encryptionMiddleware.js',
+        content: `const fp = require('fastify-plugin');
+const crypto = require('crypto');
+
+const encryptionPlugin = fp(async (fastify, options) => {
+  const key = Buffer.from(options.secretKey, 'hex');
+
+  fastify.addHook('preHandler', async (request, reply) => {
+    if (!request.body?.encrypted) return; // skip non-encrypted routes
+    try {
+      const { iv, encrypted } = request.body;
+      const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(iv, 'hex'));
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      request.body = JSON.parse(decrypted);
+    } catch {
+      reply.code(400).send({ error: 'Decryption failed' });
+    }
+  });
+
+  fastify.addHook('onSend', async (request, reply, payload) => {
+    if (typeof payload !== 'string' && !Buffer.isBuffer(payload)) return payload;
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    let encrypted = cipher.update(payload, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return JSON.stringify({ iv: iv.toString('hex'), encrypted });
+  });
+});
+
+module.exports = encryptionPlugin;`
+      });
+    }
+
     if (options && options.compress) {
       filesArray.push({
         folder: 'Middleware',

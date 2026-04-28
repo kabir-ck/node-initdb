@@ -639,6 +639,10 @@ server.register(cors);
 server.register(formbody);
 server.register(multipart);
 
+${options.encryption ? `import encryptionPlugin from "./Middleware/encryptionMiddleware";
+server.register(encryptionPlugin, { secretKey: process.env.ENCRYPTION_KEY as string, prefix: '/secure' });` : ''}
+
+
 // Register JWT plugin with secret from environment variables
 server.register(fastifyJwt, {
   secret: process.env.JWT_SECRET || 'your-secret-key',
@@ -930,6 +934,49 @@ If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.co
 
             ` } // Empty .env file
     ];
+
+    if (options && options.encryption) {
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'encryptionMiddleware.ts',
+        content: `import fp from 'fastify-plugin';
+import crypto from 'crypto';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+interface EncryptionOptions {
+  secretKey: string;
+}
+
+const encryptionPlugin = fp(async (fastify: FastifyInstance, options: EncryptionOptions) => {
+  const key = Buffer.from(options.secretKey, 'hex');
+
+  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!(request.body as any)?.encrypted) return; // skip non-encrypted routes
+    try {
+      const { iv, encrypted } = request.body as any;
+      const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.from(iv, 'hex'));
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      request.body = JSON.parse(decrypted);
+    } catch {
+      reply.code(400).send({ error: 'Decryption failed' });
+    }
+  });
+
+  fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, payload: any) => {
+    if (typeof payload !== 'string' && !Buffer.isBuffer(payload)) return payload;
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    let encrypted = cipher.update(payload, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return JSON.stringify({ iv: iv.toString('hex'), encrypted });
+  });
+});
+
+export default encryptionPlugin;`
+      });
+    }
+
     if (options && options.compress) {
       filesArray.push({
         folder: 'Middleware',
