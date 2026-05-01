@@ -551,9 +551,9 @@ const fs = require('fs'); // File system module to handle file operations
 app.use(cors()); // Applying CORS middleware to allow cross-origin requests
 app.use(express.json()); // Middleware to parse JSON bodies
 
-${options.encryption ? `const { encryptResponse, decryptRequest } = require("./Middleware/encryptionMiddleware");
+const { encryptResponse, decryptRequest } = require("./Middleware/encryptionMiddleware");
 app.use(decryptRequest);
-app.use(encryptResponse);` : ''}
+app.use(encryptResponse);
 
 const apiV1Router = require("./Routes/index.Route"); // Creating a new router for API version 1
 app.use("/api/v1" , apiV1Router); // Mounting the API v1 router at '/api/v1'
@@ -661,7 +661,7 @@ KEYPATH=
 CARTPATH=
 JWT_SECRET=
 ENCRYPTION_ALGORITHM=aes-256-cbc
-ENCRYPTION_KEY=vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn` }, // Empty .env file
+ENCRYPTION_KEY=vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn\nENCRYPT=${options.encryption ? "true" : "false"} ` }, // Empty .env file
             {
                 folder: '', name: '.gitignore', content:
                     `node_modules
@@ -758,16 +758,17 @@ If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.co
 
         ` }
         ];
-        if (options && options.encryption) {
+        { 
             filesArray.push({
                 folder: 'Middleware',
                 name: 'encryptionMiddleware.js',
                 content: `const crypto = require('crypto');
 
-const ALGORITHM = process.env.ENCRYPTION_ALGORITHM || 'aes-256-cbc';
+const ALGORITHM ='aes-256-cbc';
 const SECRET_KEY = process.env.ENCRYPTION_KEY || 'vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn'; // 32 characters
 
 function encryptResponse(req, res, next) {
+    if (process.env.ENCRYPT !== 'true') return next();
     const originalJson = res.json.bind(res);
     res.json = (data) => {
         const iv = crypto.randomBytes(16);
@@ -775,11 +776,12 @@ function encryptResponse(req, res, next) {
         let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
         encrypted += cipher.final('hex');
         originalJson({ iv: iv.toString('hex'), encrypted });
-    };
+     };
     next();
 }
 
 function decryptRequest(req, res, next) {
+    if (process.env.ENCRYPT !== 'true') return next();
     if (req.body && req.body.encrypted && req.body.iv) {
         try {
             const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(SECRET_KEY), Buffer.from(req.body.iv, 'hex'));

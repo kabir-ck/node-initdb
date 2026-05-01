@@ -650,7 +650,7 @@ import { Codes, Messages } from "./Utils/httpCodesAndMessages";
 import { readFileSync } from 'node:fs'; 
 import { node } from "@elysiajs/node";
 import { registerRoutes } from "./Routes/index.Route"; // Importing the function to register routes
-${options.encryption ? 'import { encryptionPlugin } from "./Middleware/encryptionPlugin";' : ''}
+import { encryptionPlugin } from "./Middleware/encryptionPlugin";
 
 import {connectDB} from "./config/dbConfig"; // Importing DB connection function
 connectDB(); // Connecting to the database
@@ -710,7 +710,7 @@ const app = new Elysia({adapter: node()})
       }
       })
 
-  ${options.encryption ? '.use(encryptionPlugin)' : ''}
+  .use(encryptionPlugin)
   .use(registerRoutes) // <-- wrap registerRoutes in a plugin style
 
   const startServer = async () => {
@@ -801,7 +801,8 @@ IS_HTTPS=false
 KEYPATH=
 CARTPATH=
 JWT_SECRET=
-${options.encryption ? 'ENCRYPTION_KEY=your-32-byte-secret-key-here-123456789012' : ''}` }, // Empty .env file
+ENCRYPTION_KEY=your-32-byte-secret-key-here-123456789012
+ENCRYPT=${options.encryption ? "true" : "false"}` }, // Empty .env file
       {
         folder: '', name: 'tsconfig.json', content:
           `
@@ -1070,7 +1071,7 @@ export const compressFile = async ({ body }: any) => {
       });
     }
 
-    if (options && options.encryption) {
+    { 
       filesArray.push({
         folder: 'Middleware',
         name: 'encryptionPlugin.ts',
@@ -1082,6 +1083,7 @@ const ALGORITHM = 'aes-256-cbc';
 export const encryptionPlugin = new Elysia({ name: 'encryption' })
 
   .onParse(async ({ request }) => {
+    if (process.env.ENCRYPT !== 'true') return;
     try {
       const text = await request.text();
       const { iv, encrypted } = JSON.parse(text);
@@ -1098,6 +1100,7 @@ export const encryptionPlugin = new Elysia({ name: 'encryption' })
   })
 
   .mapResponse(({ response }) => {
+    if (process.env.ENCRYPT !== 'true') return response;
     const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
@@ -1109,7 +1112,7 @@ export const encryptionPlugin = new Elysia({ name: 'encryption' })
       JSON.stringify({ iv: iv.toString('hex'), encrypted }),
       { headers: { 'Content-Type': 'application/json' } }
     );
-  });
+   });
 `
       });
     }

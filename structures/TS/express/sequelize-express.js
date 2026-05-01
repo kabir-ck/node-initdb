@@ -683,9 +683,9 @@ const app = express();
 app.use(cors()); // Using CORS middleware in the app
 app.use(express.json()); // Middleware to parse JSON bodies
 
-${options.encryption ? `import { encryptResponse, decryptRequest } from "./Middleware/encryptionMiddleware";
+import { encryptResponse, decryptRequest } from "./Middleware/encryptionMiddleware";
 app.use(decryptRequest);
-app.use(encryptResponse);` : ''}
+app.use(encryptResponse);
 
 
 // Database initialization
@@ -801,7 +801,7 @@ KEYPATH=
 CARTPATH=
 JWT_SECRET=
 ENCRYPTION_ALGORITHM=aes-256-cbc
-ENCRYPTION_KEY=vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn` }, // Empty .env file
+ENCRYPTION_KEY=vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn\nENCRYPT=${options.encryption ? "true" : "false"} ` }, // Empty .env file
       {
         folder: '', name: 'tsconfig.json', content:
           `
@@ -921,14 +921,14 @@ If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.co
 
         ` }
     ];
-    if (options && options.encryption) {
-        filesArray.push({
-            folder: 'Middleware',
-            name: 'encryptionMiddleware.ts',
-            content: `import crypto from 'crypto';
+    { 
+      filesArray.push({
+        folder: 'Middleware',
+        name: 'encryptionMiddleware.ts',
+        content: `import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 
-const ALGORITHM = process.env.ENCRYPTION_ALGORITHM || 'aes-256-cbc';
+const ALGORITHM = 'aes-256-cbc';
 const SECRET_KEY = process.env.ENCRYPTION_KEY || 'vOVH6sd6vY1559nSDR7m9n6BvL7mS8Yn'; // 32 characters
 
 export const encryptResponse = (req: Request, res: Response, next: NextFunction) => {
@@ -939,7 +939,7 @@ export const encryptResponse = (req: Request, res: Response, next: NextFunction)
         let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
         encrypted += cipher.final('hex');
         return originalJson({ iv: iv.toString('hex'), encrypted });
-    };
+     };
     next();
 };
 
@@ -958,7 +958,7 @@ export const decryptRequest = (req: Request, res: Response, next: NextFunction) 
     next();
 };
 `
-        });
+      });
     }
     if (options && options.compress) {
       filesArray.push({

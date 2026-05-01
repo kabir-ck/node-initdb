@@ -168,11 +168,9 @@ const askQuestion = (index, options, rl) => { // Recursive function to ask each 
         cmd += " @types/archiver @types/fluent-ffmpeg";
       }
     }
-    if (options.encryption) {
-      if (options.fastify) {
+    if (options.fastify) {
         cmd += " fastify-plugin";
       }
-    }
     const rootPath = path.join(process.cwd()); // Root path of the project
     // Create directories as specified in folders array
     folders.forEach(folder => {

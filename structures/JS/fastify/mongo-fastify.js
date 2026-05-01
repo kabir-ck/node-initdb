@@ -532,8 +532,8 @@ fastify.register(require('@fastify/cors'));
 fastify.register(require('@fastify/formbody'));
 fastify.register(require("@fastify/multipart"));
 
-${options.encryption ? `const encryptionPlugin = require("./Middleware/encryptionMiddleware");
-fastify.register(encryptionPlugin, { secretKey: process.env.ENCRYPTION_KEY, prefix: '/secure' });` : ''}
+const encryptionPlugin = require("./Middleware/encryptionMiddleware");
+fastify.register(encryptionPlugin, { secretKey: process.env.ENCRYPTION_KEY, prefix: '/secure' });
 
 fastify.register(require('@fastify/jwt'), {
     secret: process.env.JWT_SECRET || 'X~7W@**TsZ=@}XT/"Z<bo7oDY8gtD('
@@ -712,7 +712,9 @@ DB_PASS=
 IS_HTTPS=false
 KEYPATH=
 CARTPATH=
-JWT_SECRET=` },
+JWT_SECRET=
+ENCRYPTION_KEY=your-32-byte-secret-key-here-123456789012
+ENCRYPT=${options.encryption ? "true" : "false"}` },
       {
         folder: '', name: '.gitignore', content:
           `node_modules
@@ -809,7 +811,7 @@ If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.co
             ` } // Empty .env file
     ];
 
-    if (options && options.encryption) {
+    { 
       filesArray.push({
         folder: 'Middleware',
         name: 'encryptionMiddleware.js',
@@ -820,6 +822,7 @@ const encryptionPlugin = fp(async (fastify, options) => {
   const key = Buffer.from(options.secretKey, 'hex');
 
   fastify.addHook('preHandler', async (request, reply) => {
+    if (process.env.ENCRYPT !== 'true') return;
     if (!request.body?.encrypted) return; // skip non-encrypted routes
     try {
       const { iv, encrypted } = request.body;
@@ -829,10 +832,11 @@ const encryptionPlugin = fp(async (fastify, options) => {
       request.body = JSON.parse(decrypted);
     } catch {
       reply.code(400).send({ error: 'Decryption failed' });
-    }
+     }
   });
 
   fastify.addHook('onSend', async (request, reply, payload) => {
+    if (process.env.ENCRYPT !== 'true') return payload;
     if (typeof payload !== 'string' && !Buffer.isBuffer(payload)) return payload;
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);

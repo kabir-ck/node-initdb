@@ -178,6 +178,19 @@ Any non-image, non-video file exceeding **5MB** is compressed into a `.zip` arch
 | Videos    | 100 MB    |
 | Others    | 5 MB      |
 
+## Browser Encryption Setup
+
+- **Key**: Use the same `ENCRYPTION_KEY` (must be 16, 24, or 32 UTF-8 bytes).
+- **Algorithm**: Web Crypto API with `AES-CBC` and a random 16-byte IV per request.
+- **Request**: Encrypt `JSON.stringify(body)` and send as:
+  ```json
+  { "iv": "hex_encoded_iv", "encrypted": "hex_encoded_ciphertext" }
+  ```
+  Include header: `Content-Type: application/json`.
+- **Response**: Parse the JSON response, convert hex fields back to bytes, decrypt using `AES-CBC`, and `JSON.parse` the result.
+
+*Note: Web Crypto requires a secure context (`https://` or `localhost`).*
+
 ## Dependencies
 
 Depending on your chosen configuration, node-initdb installs the following dependencies:

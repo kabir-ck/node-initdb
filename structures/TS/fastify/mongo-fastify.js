@@ -639,8 +639,8 @@ server.register(cors);
 server.register(formbody);
 server.register(multipart);
 
-${options.encryption ? `import encryptionPlugin from "./Middleware/encryptionMiddleware";
-server.register(encryptionPlugin, { secretKey: process.env.ENCRYPTION_KEY as string, prefix: '/secure' });` : ''}
+import encryptionPlugin from "./Middleware/encryptionMiddleware";
+server.register(encryptionPlugin, { secretKey: process.env.ENCRYPTION_KEY as string, prefix: '/secure' });
 
 
 // Register JWT plugin with secret from environment variables
@@ -814,7 +814,9 @@ DB_PASS=
 IS_HTTPS=false
 KEYPATH=
 CARTPATH=
-JWT_SECRET=` },
+JWT_SECRET=
+ENCRYPTION_KEY=your-32-byte-secret-key-here-123456789012
+ENCRYPT=${options.encryption ? "true" : "false"}` },
       {
         folder: '', name: 'tsconfig.json', content:
           `
@@ -935,7 +937,7 @@ If you encounter any issues, feel free to reach out at ashrafchauhan567@gmail.co
             ` } // Empty .env file
     ];
 
-    if (options && options.encryption) {
+    { 
       filesArray.push({
         folder: 'Middleware',
         name: 'encryptionMiddleware.ts',
@@ -951,6 +953,7 @@ const encryptionPlugin = fp(async (fastify: FastifyInstance, options: Encryption
   const key = Buffer.from(options.secretKey, 'hex');
 
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (process.env.ENCRYPT !== 'true') return;
     if (!(request.body as any)?.encrypted) return; // skip non-encrypted routes
     try {
       const { iv, encrypted } = request.body as any;
@@ -960,10 +963,11 @@ const encryptionPlugin = fp(async (fastify: FastifyInstance, options: Encryption
       request.body = JSON.parse(decrypted);
     } catch {
       reply.code(400).send({ error: 'Decryption failed' });
-    }
+     }
   });
 
   fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, payload: any) => {
+    if (process.env.ENCRYPT !== 'true') return payload;
     if (typeof payload !== 'string' && !Buffer.isBuffer(payload)) return payload;
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
